@@ -1,2 +1,4 @@
 .bakalarirc
 config.toml
+*.log
+.DS_Store

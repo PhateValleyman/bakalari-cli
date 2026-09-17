@@ -1,117 +1,89 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
+# rozvrh.sh – zobrazí barevný rozvrh z Bakalářů přímo v terminálu.
+#
+# Konfigurace a přihlašovací logika je sdílená s ukoly.sh přes lib/common.sh.
+#
+# Použití:
+#   ./rozvrh.sh
+#
+# Proměnné prostředí:
+#   BAKALARI_CONFIG   cesta ke config.toml (výchozí: ~/.config/bakalari/config.toml)
 
 set -o pipefail
+set -u
 
-CONFIG="$HOME/.config/bakalari/config.toml"
-SCHOOL="zssumava.bakalari.cz"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+# shellcheck source=lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    printf 'Použití: %s\nZobrazí barevný rozvrh z Bakalářů.\n' "$0"
+    exit 0
+fi
+
+require_cmd curl jq awk || exit 1
+require_config || exit 1
+
+SCHOOL="$(config_value general school)"
+SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
+MAX_HOUR="$(config_value general max_hours)"
+MAX_HOUR="${MAX_HOUR:-6}"
 LOGIN_URL="https://${SCHOOL}/api/login"
 TIMETABLE_URL="https://${SCHOOL}/api/3/timetable/actual"
-MAX_HOUR=6
 
 if command -v gawk >/dev/null 2>&1; then
     AWK="$(command -v gawk)"
 else
     AWK="$(command -v awk)"
-    printf 'WARN: gawk not found, falling back to %s.\n' "$AWK" >&2
+    log_warn "gawk nenalezen, používám $AWK."
 fi
 
-config_value() {
-    local key="$1"
-    awk -F '=' -v key="$key" '
-        /^\[zssumava\.bakalari\.cz\]$/ { section=1; next }
-        /^\[/ { section=0 }
-        section && $1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
-            value=$0
-            sub(/^[^=]*=[[:space:]]*/, "", value)
-            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
-            gsub(/^"|"$/, "", value)
-            print value
-            exit
-        }
-    ' "$CONFIG"
-}
-
-if [[ ! -f "$CONFIG" ]]; then
-    printf 'ERROR: Configuration file not found: %s\n' "$CONFIG" >&2
-    exit 1
-fi
-
-USERNAME="$(config_value user)"
-PASSWORD="$(config_value pass)"
-TOKEN="$(config_value TOKEN)"
+USERNAME="$(config_value "$SCHOOL" user)"
+PASSWORD="$(config_value "$SCHOOL" pass)"
+TOKEN="$(config_value "$SCHOOL" TOKEN)"
 
 if [[ -z "$USERNAME" ]]; then
-    printf 'ERROR: Missing "user" in %s\n' "$CONFIG" >&2
+    log_error "Chybí \"user\" v $BAKALARI_CONFIG"
     exit 1
 fi
 if [[ -z "$PASSWORD" ]]; then
-    printf 'ERROR: Missing "pass" in %s\n' "$CONFIG" >&2
+    log_error "Chybí \"pass\" v $BAKALARI_CONFIG"
     exit 1
 fi
 
-login() {
-    local response
-    printf 'INFO: Access token expired or invalid. Logging in...\n' >&2
-    response="$(
-        curl -fsS -X POST "$LOGIN_URL" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            --data-urlencode "client_id=ANDR" \
-            --data-urlencode "grant_type=password" \
-            --data-urlencode "username=$USERNAME" \
-            --data-urlencode "password=$PASSWORD"
-    )" || { printf 'ERROR: Bakalari login failed.\n' >&2; return 1; }
-    TOKEN="$(printf '%s\n' "$response" | jq -r '.access_token // empty')"
-    if [[ -z "$TOKEN" ]]; then
-        printf 'ERROR: Login response does not contain access_token.\n' >&2
-        return 1
-    fi
-    return 0
-}
-
-save_token() {
-    local tmp
-    tmp="$(mktemp)" || return 1
-    awk -v token="$TOKEN" '
-        /^\[zssumava\.bakalari\.cz\]$/ { section=1; print; next }
-        /^\[/ { section=0 }
-        section && /^[[:space:]]*TOKEN[[:space:]]*=/ { print "TOKEN = " token; next }
-        { print }
-    ' "$CONFIG" > "$tmp" || { rm -f "$tmp"; return 1; }
-    mv "$tmp" "$CONFIG"
-}
-
 fetch_timetable() {
-    curl -fsS -X GET "$TIMETABLE_URL" -H "Authorization: Bearer $TOKEN"
+    fetch_json "$TIMETABLE_URL" "$TOKEN"
 }
 
-if ! DATA="$(fetch_timetable 2>/dev/null)"; then
-    if ! login; then exit 1; fi
-    if ! save_token; then
-        printf 'WARN: Could not update TOKEN in %s\n' "$CONFIG" >&2
+# Zkus nejdřív uložený TOKEN; pokud chybí nebo je neplatný, přihlas se znovu.
+if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_timetable 2>/dev/null)"; then
+    if ! TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")"; then
+        exit 1
     fi
+    save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
     if ! DATA="$(fetch_timetable)"; then
-        printf 'ERROR: Timetable request failed even after login.\n' >&2
+        log_error "Požadavek na rozvrh selhal i po přihlášení."
         exit 1
     fi
 fi
 
-if ! printf '%s\n' "$DATA" | jq -e . >/dev/null 2>&1; then
-    printf 'ERROR: Bakalari returned invalid JSON.\n' >&2
+if ! printf '%s' "$DATA" | jq -e . >/dev/null 2>&1; then
+    log_error "Bakaláři vrátili neplatný JSON."
     exit 1
 fi
 
-if ! printf '%s\n' "$DATA" | jq -e '
+if ! printf '%s' "$DATA" | jq -e '
     type == "object"
     and (.Days | type == "array")
     and (.Hours | type == "array")
     and (.Subjects | type == "array")
 ' >/dev/null 2>&1; then
-    printf 'ERROR: Unexpected timetable JSON structure.\n' >&2
+    log_error "Neočekávaná struktura JSON rozvrhu."
     exit 1
 fi
 
 if ! TABLE="$(
-    printf '%s\n' "$DATA" |
+    printf '%s' "$DATA" |
     jq -r --argjson maxhour "$MAX_HOUR" '
         ([.Subjects[] | {
             key:   (.Id|tostring|gsub("\\s";"")),
@@ -170,12 +142,12 @@ if ! TABLE="$(
           )
     '
 )"; then
-    printf 'ERROR: Failed to render timetable.\n' >&2
+    log_error "Nepodařilo se vykreslit rozvrh."
     exit 1
 fi
 
 if [[ -z "$TABLE" ]]; then
-    printf 'ERROR: Timetable is empty.\n' >&2
+    log_error "Rozvrh je prázdný."
     exit 1
 fi
 
@@ -272,12 +244,12 @@ printf '%s\n' "$TABLE" | "$AWK" '
         for (c = 1; c <= ncols; c++) h1 = h1 HI center(cap[c], cellw) RST "│"
         print h1
 
-        # Řádek 2: čas od (světle šedý text).
+        # Řádek 2: čas od (šedý text).
         h2 = "│" HI center("", dayw) RST "│"
         for (c = 1; c <= ncols; c++) h2 = h2 HID center(tfrom[c], cellw) RST "│"
         print h2
 
-        # Řádek 3: čas do (světle šedý text).
+        # Řádek 3: čas do (šedý text).
         h3 = "│" HI center("", dayw) RST "│"
         for (c = 1; c <= ncols; c++) h3 = h3 HID center(tto[c], cellw) RST "│"
         print h3

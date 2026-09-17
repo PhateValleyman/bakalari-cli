@@ -1,0 +1,21 @@
+# Konfigurace pro bakalari-cli.
+#
+# Zkopíruj tento soubor do ~/.config/bakalari/config.toml (nebo na cestu
+# nastavenou proměnnou prostředí BAKALARI_CONFIG) a vyplň vlastní údaje.
+# Tento soubor je v .gitignore, takže se necommitne s citlivými údaji.
+
+[general]
+# Doména Bakalářů (bez "https://").
+school = "zssumava.bakalari.cz"
+
+# Kolik vyučovacích hodin zobrazit v rozvrhu (rozvrh.sh).
+max_hours = 6
+
+# Sekce musí mít stejný název jako "school" výše.
+[zssumava.bakalari.cz]
+user  = "your_username"
+pass  = "your_password"
+
+# TOKEN se doplňuje a obnovuje automaticky po prvním přihlášení,
+# není potřeba ho vyplňovat ručně.
+TOKEN = ""
