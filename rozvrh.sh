@@ -55,7 +55,7 @@ fetch_timetable() {
     fetch_json "$TIMETABLE_URL" "$TOKEN"
 }
 
-# Zkus nejdřív uložený TOKEN; pokud chybí nebo je neplatný, přihlas se znovu.
+# Try the stored token first; refresh it automatically when it is missing or invalid.
 if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_timetable 2>/dev/null)"; then
     if ! TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")"; then
         exit 1
@@ -84,64 +84,65 @@ fi
 
 load_subject_colors
 
+# Build the printable timetable rows with a deliberately simple jq pipeline.
 if ! TABLE="$(
     printf '%s' "$DATA" |
     jq -r --argjson maxhour "$MAX_HOUR" '
         ([.Subjects[] | {
-            key:   (.Id|tostring|gsub("\\s";"")),
+            key: (.Id | tostring | gsub("\\s"; "")),
             value: (.Abbrev // .Name // "?")
         }] | from_entries) as $subjects
-
-        | ([.Teachers[] | {
-            key:   (.Id|tostring|gsub("\\s";"")),
+        |
+        ([.Teachers[] | {
+            key: (.Id | tostring | gsub("\\s"; "")),
             value: (
                 (.Name // .Abbrev // "?")
-                | gsub("\\s+";" ")
+                | gsub("\\s+"; " ")
                 | split(" ")
                 | map(select(length > 0))
-                | (if length > 0 then .[-1] else "?" end)
+                | if length > 0 then .[-1] else "?" end
             )
         }] | from_entries) as $teachers
-
-        | ([.Hours[] | {
-              Id:    (.Id | tonumber),
-              Cap:   ((.Caption // (.Id|tostring)) | tostring),
-              Begin: ((.BeginTime // "") | tostring),
-              End:   ((.EndTime   // "") | tostring)
-          }]
-          | sort_by(.Id)
-          | .[0:$maxhour]
-          ) as $hourinfo
-
-        | (
-            (["HDR"] + [
-                $hourinfo[] | .Cap + "\u001f" + .Begin + "\u001f" + .End
-              ] | @tsv),
-
-            ( .Days[]
-              | . as $day
-              | (if $day.DayOfWeek == 1 then "Po"
-                 elif $day.DayOfWeek == 2 then "Út"
-                 elif $day.DayOfWeek == 3 then "St"
-                 elif $day.DayOfWeek == 4 then "Čt"
-                 elif $day.DayOfWeek == 5 then "Pá"
-                 else ($day.DayOfWeek|tostring) end) as $dn
-              | ([$dn] + [
-                    $hourinfo[] | (.Id | tostring) as $hid
-                    | [ $day.Atoms[]?
-                        | select((.HourId|tostring) == $hid)
-                        | (.SubjectId|tostring|gsub("\\s";"")) as $sid
-                        | {
-                            a: ($subjects[$sid] // "?"),
-                            t: ($teachers[(.TeacherId|tostring|gsub("\\s";""))] // "")
-                          }
-                      ]
-                    | if length == 0 then ""
-                      else (map(.a)|join("/")) + "\u001f" + (map(.t)|join(","))
-                      end
-                  ] | @tsv
-            )
-          )
+        |
+        ([.Hours[] | {
+            Id: (.Id | tonumber),
+            Cap: ((.Caption // (.Id | tostring)) | tostring),
+            Begin: ((.BeginTime // "") | tostring),
+            End: ((.EndTime // "") | tostring)
+        }] | sort_by(.Id) | .[0:$maxhour]) as $hourinfo
+        |
+        (["HDR"] + [
+            $hourinfo[] | .Cap + "\u001f" + .Begin + "\u001f" + .End
+        ] | @tsv),
+        (
+            .Days[]
+            | . as $day
+            | (
+                if $day.DayOfWeek == 1 then "Po"
+                elif $day.DayOfWeek == 2 then "Út"
+                elif $day.DayOfWeek == 3 then "St"
+                elif $day.DayOfWeek == 4 then "Čt"
+                elif $day.DayOfWeek == 5 then "Pá"
+                else ($day.DayOfWeek | tostring)
+                end
+            ) as $dn
+            | ([$dn] + [
+                $hourinfo[]
+                | (.Id | tostring) as $hid
+                | [
+                    $day.Atoms[]?
+                    | select((.HourId | tostring) == $hid)
+                    | (.SubjectId | tostring | gsub("\\s"; "")) as $sid
+                    | {
+                        a: ($subjects[$sid] // "?"),
+                        t: ($teachers[(.TeacherId | tostring | gsub("\\s"; ""))] // "")
+                    }
+                ]
+                | if length == 0 then ""
+                  else (map(.a) | join("/")) + "\u001f" + (map(.t) | join(","))
+                  end
+            ] | @tsv)
+        )
     '
 )"; then
     log_error "Nepodařilo se vykreslit rozvrh."
@@ -153,7 +154,7 @@ if [[ -z "$TABLE" ]]; then
     exit 1
 fi
 
-# Build the awk color map from config values and keep the existing defaults.
+# Read configured subject colors while preserving the original defaults.
 COLOR_HV="${SUBJECT_COLORS[Hv]}"
 COLOR_M="${SUBJECT_COLORS[M]}"
 COLOR_CJ="${SUBJECT_COLORS[Čj]}"
