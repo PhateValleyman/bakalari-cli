@@ -151,6 +151,7 @@ if [[ -z "$TABLE" ]]; then
     exit 1
 fi
 
+# shellcheck disable=SC2016  # jednoduché uvozovky jsou tu záměrně - je to awk program, ne bash string
 printf '%s\n' "$TABLE" | "$AWK" '
     function rep(c, n,   s, i) {
         s = ""
