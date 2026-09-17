@@ -1,21 +1,32 @@
-# Konfigurace pro bakalari-cli.
+# Configuration for bakalari-cli.
 #
-# Zkopíruj tento soubor do ~/.config/bakalari/config.toml (nebo na cestu
-# nastavenou proměnnou prostředí BAKALARI_CONFIG) a vyplň vlastní údaje.
-# Tento soubor je v .gitignore, takže se necommitne s citlivými údaji.
+# Copy this file to ~/.config/bakalari/config.toml (or to the path
+# configured by BAKALARI_CONFIG) and fill in your own credentials.
+# This file is tracked only as an example; the real config is ignored.
 
 [general]
-# Doména Bakalářů (bez "https://").
+# Bakalari hostname without "https://".
 school = "zssumava.bakalari.cz"
 
-# Kolik vyučovacích hodin zobrazit v rozvrhu (rozvrh.sh).
+# Number of timetable lessons to display.
 max_hours = 6
 
-# Sekce musí mít stejný název jako "school" výše.
+[colors]
+# Optional ANSI 256-color palette for timetable subjects.
+# If a subject is missing here, rozvrh.sh uses its built-in default color.
+# Valid values are 0-255.
+Hv  = 135
+M   = 33
+Čj  = 34
+Prv = 172
+Vv  = 44
+Pč  = 160
+Tv  = 170
+
+# The section name must match the "school" value above.
 [zssumava.bakalari.cz]
 user  = "your_username"
 pass  = "your_password"
 
-# TOKEN se doplňuje a obnovuje automaticky po prvním přihlášení,
-# není potřeba ho vyplňovat ručně.
+# TOKEN is filled and refreshed automatically after login.
 TOKEN = ""

@@ -82,6 +82,8 @@ if ! printf '%s' "$DATA" | jq -e '
     exit 1
 fi
 
+load_subject_colors
+
 if ! TABLE="$(
     printf '%s' "$DATA" |
     jq -r --argjson maxhour "$MAX_HOUR" '
@@ -112,9 +114,9 @@ if ! TABLE="$(
           ) as $hourinfo
 
         | (
-            ((["HDR"] + [
+            (["HDR"] + [
                 $hourinfo[] | .Cap + "\u001f" + .Begin + "\u001f" + .End
-              ]) | @tsv),
+              ] | @tsv),
 
             ( .Days[]
               | . as $day
@@ -137,7 +139,7 @@ if ! TABLE="$(
                     | if length == 0 then ""
                       else (map(.a)|join("/")) + "\u001f" + (map(.t)|join(","))
                       end
-                  ]) | @tsv
+                  ] | @tsv
             )
           )
     '
@@ -151,8 +153,24 @@ if [[ -z "$TABLE" ]]; then
     exit 1
 fi
 
-# shellcheck disable=SC2016  # jednoduché uvozovky jsou tu záměrně - je to awk program, ne bash string
-printf '%s\n' "$TABLE" | "$AWK" '
+# Build the awk color map from config values and keep the existing defaults.
+COLOR_HV="${SUBJECT_COLORS[Hv]}"
+COLOR_M="${SUBJECT_COLORS[M]}"
+COLOR_CJ="${SUBJECT_COLORS[Čj]}"
+COLOR_PRV="${SUBJECT_COLORS[Prv]}"
+COLOR_VV="${SUBJECT_COLORS[Vv]}"
+COLOR_PC="${SUBJECT_COLORS[Pč]}"
+COLOR_TV="${SUBJECT_COLORS[Tv]}"
+
+# Render the timetable as a bordered terminal table.
+printf '%s\n' "$TABLE" | "$AWK" \
+    -v color_hv="$COLOR_HV" \
+    -v color_m="$COLOR_M" \
+    -v color_cj="$COLOR_CJ" \
+    -v color_prv="$COLOR_PRV" \
+    -v color_vv="$COLOR_VV" \
+    -v color_pc="$COLOR_PC" \
+    -v color_tv="$COLOR_TV" '
     function rep(c, n,   s, i) {
         s = ""
         for (i = 0; i < n; i++) s = s c
@@ -172,17 +190,17 @@ printf '%s\n' "$TABLE" | "$AWK" '
         ESC = "\033"
         US  = "\037"
 
-        HI  = ESC "[48;5;255m" ESC "[38;5;16m"    # bílé pozadí, černý text
-        HID = ESC "[48;5;255m" ESC "[38;5;245m"   # bílé pozadí, šedý text
+        HI  = ESC "[48;5;255m" ESC "[38;5;16m"
+        HID = ESC "[48;5;255m" ESC "[38;5;245m"
         RST = ESC "[0m"
 
-        col["Hv"]  = 135
-        col["M"]   = 33
-        col["Čj"]  = 34
-        col["Prv"] = 172
-        col["Vv"]  = 44
-        col["Pč"]  = 160
-        col["Tv"]  = 170
+        col["Hv"]  = color_hv
+        col["M"]   = color_m
+        col["Čj"]  = color_cj
+        col["Prv"] = color_prv
+        col["Vv"]  = color_vv
+        col["Pč"]  = color_pc
+        col["Tv"]  = color_tv
     }
 
     NR == 1 {
@@ -195,7 +213,9 @@ printf '%s\n' "$TABLE" | "$AWK" '
             l1 = length(cap[i-1])
             l2 = length(tfrom[i-1])
             l3 = length(tto[i-1])
-            w = l1; if (l2 > w) w = l2; if (l3 > w) w = l3
+            w = l1
+            if (l2 > w) w = l2
+            if (l3 > w) w = l3
             if (w > maxw) maxw = w
         }
         ncols = NF - 1
@@ -212,7 +232,8 @@ printf '%s\n' "$TABLE" | "$AWK" '
             if (a == "" || a == "--") { a = ""; t = "" }
             A[ri, i-1] = a
             T[ri, i-1] = t
-            la = length(a); lt = length(t)
+            la = length(a)
+            lt = length(t)
             w = (la > lt) ? la : lt
             if (w > maxw) maxw = w
         }
@@ -220,7 +241,6 @@ printf '%s\n' "$TABLE" | "$AWK" '
     }
 
     END {
-        # Minimální šířky: den = 4 znaky (Po/Út/…), buňka = maxw (0 paddingu).
         dayw  = 4
         cellw = maxw
 
@@ -232,25 +252,26 @@ printf '%s\n' "$TABLE" | "$AWK" '
             SEP = SEP rep("─", cellw)
             BOT = BOT rep("─", cellw)
             if (c < ncols) {
-                TOP = TOP "┬"; SEP = SEP "┼"; BOT = BOT "┴"
+                TOP = TOP "┬"
+                SEP = SEP "┼"
+                BOT = BOT "┴"
             } else {
-                TOP = TOP "┐"; SEP = SEP "┤"; BOT = BOT "┘"
+                TOP = TOP "┐"
+                SEP = SEP "┤"
+                BOT = BOT "┘"
             }
         }
 
         print TOP
 
-        # Řádek 1: číslo hodiny.
         h1 = "│" HI center("", dayw) RST "│"
         for (c = 1; c <= ncols; c++) h1 = h1 HI center(cap[c], cellw) RST "│"
         print h1
 
-        # Řádek 2: čas od (šedý text).
         h2 = "│" HI center("", dayw) RST "│"
         for (c = 1; c <= ncols; c++) h2 = h2 HID center(tfrom[c], cellw) RST "│"
         print h2
 
-        # Řádek 3: čas do (šedý text).
         h3 = "│" HI center("", dayw) RST "│"
         for (c = 1; c <= ncols; c++) h3 = h3 HID center(tto[c], cellw) RST "│"
         print h3
@@ -261,7 +282,7 @@ printf '%s\n' "$TABLE" | "$AWK" '
             if (r > 1) print SEP
 
             l1 = "│" HI center(D[r], dayw) RST "│"
-            l2 = "│" HI center("",   dayw) RST "│"
+            l2 = "│" HI center("", dayw) RST "│"
 
             for (c = 1; c <= ncols; c++) {
                 a = A[r, c]
@@ -271,7 +292,8 @@ printf '%s\n' "$TABLE" | "$AWK" '
                     l1 = l1 blank "│"
                     l2 = l2 blank "│"
                 } else {
-                    cc = col[a]; if (cc == "") cc = 244
+                    cc = col[a]
+                    if (cc == "") cc = 244
                     bg = ESC "[48;5;" cc "m" ESC "[97m"
                     l1 = l1 bg center(a, cellw) RST "│"
                     l2 = l2 bg center(t, cellw) RST "│"

@@ -1,22 +1,8 @@
 # shellcheck shell=bash
 # lib/common.sh
-# Sdílené funkce a konfigurace pro bakalari-cli.
-# Tento soubor se pouze SOURCUJE z ostatních skriptů (rozvrh.sh, ukoly.sh, ...),
-# sám o sobě se nespouští.
-#
-# Cíl: aby všechny nástroje v tomto repozitáři používaly stejné:
-#   - načítání konfigurace (config.toml)
-#   - přihlašování k Bakalářům a ukládání TOKENu
-#   - barevný a jednotný výstup (INFO/WARN/ERROR/OK)
-#   - kontrolu závislostí (curl, jq, ...)
-#
-# Poznámka k budoucímu přechodu na Go: veškerá logika, která bude potřeba
-# přenést (config parsing, login flow, token cache), je soustředěná právě
-# zde – ne rozeseta po jednotlivých skriptech. Viz TODOO.md.
+# Shared functions and configuration for bakalari-cli.
+# This file is sourced by the individual scripts.
 
-# --- Barvy (čisté ANSI escape sekvence, bez závislosti na tput/terminfo,
-#     aby fungovaly i na minimálních systémech jako ffp na ZyXEL NSA320) ---
-# shellcheck disable=SC2034  # barvy jsou veřejné API pro skripty, co lib sourcují
 readonly C_RESET=$'\033[0m'
 readonly C_BOLD=$'\033[1m'
 readonly C_RED=$'\033[1;31m'
@@ -25,14 +11,11 @@ readonly C_YELLOW=$'\033[1;33m'
 readonly C_BLUE=$'\033[1;34m'
 readonly C_GRAY=$'\033[0;90m'
 
-# --- Jednotné logovací funkce (vše na stderr, aby stdout zůstal čistý
-#     pro data/tabulky, které může chtít někdo dál zpracovávat) ------------
 log_info()  { printf '%sINFO:%s  %s\n' "$C_BLUE"   "$C_RESET" "$*" >&2; }
 log_warn()  { printf '%sWARN:%s  %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_error() { printf '%sERROR:%s %s\n' "$C_RED"    "$C_RESET" "$*" >&2; }
 log_ok()    { printf '%sOK:%s    %s\n' "$C_GREEN"  "$C_RESET" "$*" >&2; }
 
-# require_cmd curl jq ...
 require_cmd() {
     local missing=() c
     for c in "$@"; do
@@ -45,9 +28,6 @@ require_cmd() {
     return 0
 }
 
-# --- Konfigurace ------------------------------------------------------------
-# Lze přebít proměnnou prostředí BAKALARI_CONFIG (např. pro testy nebo
-# alternativní profil na daném zařízení).
 BAKALARI_CONFIG="${BAKALARI_CONFIG:-$HOME/.config/bakalari/config.toml}"
 
 require_config() {
@@ -59,10 +39,6 @@ require_config() {
     return 0
 }
 
-# config_value <sekce> <klíč>
-# Čte hodnotu z jednoduchého TOML-like souboru (sekce v hranatých závorkách,
-# klíč = hodnota). Stejná logika se používá pro čtení i zápis (save_token),
-# takže obě funkce musí zůstat konzistentní.
 config_value() {
     local section="$1" key="$2"
     local rsection="${section//./\\.}"
@@ -80,8 +56,29 @@ config_value() {
     ' "$BAKALARI_CONFIG" 2>/dev/null
 }
 
-# save_token <sekce> <token>
-# Zapíše/aktualizuje TOKEN v příslušné sekci konfiguračního souboru.
+# Load a timetable subject color from [colors], returning the default when absent.
+subject_color() {
+    local subject="$1" default="$2" value
+    value="$(config_value colors "$subject")"
+    if [[ "$value" =~ ^[0-9]+$ ]] && (( value >= 0 && value <= 255 )); then
+        printf '%s' "$value"
+    else
+        printf '%s' "$default"
+    fi
+}
+
+# Return the configured timetable color as an associative array entry.
+load_subject_colors() {
+    declare -gA SUBJECT_COLORS=()
+    SUBJECT_COLORS[Hv]="$(subject_color Hv 135)"
+    SUBJECT_COLORS[M]="$(subject_color M 33)"
+    SUBJECT_COLORS[Čj]="$(subject_color Čj 34)"
+    SUBJECT_COLORS[Prv]="$(subject_color Prv 172)"
+    SUBJECT_COLORS[Vv]="$(subject_color Vv 44)"
+    SUBJECT_COLORS[Pč]="$(subject_color Pč 160)"
+    SUBJECT_COLORS[Tv]="$(subject_color Tv 170)"
+}
+
 save_token() {
     local section="$1" token="$2" tmp
     local rsection="${section//./\\.}"
@@ -95,10 +92,6 @@ save_token() {
     mv "$tmp" "$BAKALARI_CONFIG"
 }
 
-# --- Bakaláři API ------------------------------------------------------------
-
-# bakalari_login <school> <login_url> <username> <password>
-# Vypíše nový access token na stdout, nebo vrátí nenulový kód a chybu na stderr.
 bakalari_login() {
     local school="$1" login_url="$2" username="$3" password="$4" response
     log_info "Přihlašuji se k $school ..."
@@ -120,14 +113,10 @@ bakalari_login() {
     printf '%s' "$token"
 }
 
-# fetch_json <url> <token>
 fetch_json() {
     curl -fsS -X GET "$1" -H "Authorization: Bearer $2"
 }
 
-# --- Notifikace (Termux na Androidu) -----------------------------------------
-# notify_android <id> <title> <content>
-# Na zařízeních bez termux-notification (NSA320, běžné PC) tiše nic neudělá.
 notify_android() {
     command -v termux-notification >/dev/null 2>&1 || return 0
     termux-notification \
