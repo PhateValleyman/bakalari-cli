@@ -13,9 +13,16 @@ LIST_USERS=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)
-            printf 'Použití: %s [--user USER]\n' "$0"
+            usage_module_header "Modul: rozvrh"
+            usage_section "Použití:"
+            printf '  %sbakalari-cli rozvrh%s [volby]\n' "$C_BOLD" "$C_RESET"
+            printf '\n'
+            usage_section "Volby:"
+            usage_option "--user USER" "Použít konkrétní profil"
+            usage_option "--list-users" "Vypsat dostupné profily"
+            usage_option "--help" "Zobrazit tuto nápovědu"
             exit 0
-            ;;
+            
         --user)
             [[ $# -ge 2 && -n "$2" ]] || { log_error "Volba --user vyžaduje profil."; exit 2; }
             USER_OVERRIDE="$2"
