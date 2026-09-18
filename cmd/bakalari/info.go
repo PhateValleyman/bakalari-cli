@@ -51,7 +51,12 @@ var infoCmd = &cobra.Command{
 
 			userInfo, err = client.FetchUserInfo()
 			if err != nil {
-				log.Fatalf("Failed to fetch user info: %v", err)
+				if cached, cacheErr := client.LoadCachedUserInfo(); cacheErr == nil {
+					log.Printf("Warning: using cached data: %v", err)
+					userInfo = cached
+				} else {
+					log.Fatalf("Failed to fetch user info: %v", err)
+				}
 			}
 		}
 
