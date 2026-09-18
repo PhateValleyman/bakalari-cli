@@ -69,7 +69,7 @@ fi
 read -r ABS_TOTAL ABS_UNSOLVED ABS_EXCUSED <<EOF
 $(printf '%s' "$ABSENCE_DATA" | jq -r '[.Absences[]?] | {total:(map(.Missed // 0)|add // 0), unsolved:(map(.Unsolved // 0)|add // 0)} | "\(.total) \(.unsolved) \((.total-.unsolved)|if . < 0 then 0 else . end)"')
 EOF
-OVERALL_AVG="$(printf '%s' "$MARKS_DATA" | jq -r '[.Subjects[]?.AverageText | select(type=="string" and length>0) | gsub(",";".") | tonumber?] | if length==0 then "-" else ((add/length)*100|round/100|tostring|gsub("\.";",")) end')"
+OVERALL_AVG="$(printf '%s' "$MARKS_DATA" | jq -r '[.Subjects[]?.AverageText | select(type=="string" and length>0) | gsub(",";".") | tonumber?] | if length==0 then "-" else ((add/length)*100|round/100|tostring|gsub("\\.";",")) end')"
 
 printf '%s%s=== Informace o uživateli ===%s\n' "$C_BOLD" "$(c256 39)" "$C_RESET"
 printf '%sProfil: %s%s\n' "$(c256 244)" "$BAKALARI_USER" "$C_RESET"
