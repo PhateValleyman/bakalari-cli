@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/phatevalleyman/bakalari-cli/internal/bakalari"
 	"github.com/spf13/cobra"
@@ -30,6 +31,12 @@ var rozvrhCmd = &cobra.Command{
 
 		client := bakalari.NewClient(profile.Host)
 		client.Token = profile.Token
+		client.Profile = profileName
+		client.CacheDir = cfg.General.CacheDir
+		if client.CacheDir == "" {
+			home, _ := os.UserHomeDir()
+			client.CacheDir = filepath.Join(home, ".cache", "bakalari-cli")
+		}
 
 		timetable, err := client.FetchTimetable()
 		if err != nil {

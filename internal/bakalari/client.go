@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -15,6 +17,8 @@ type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
 	Token      string
+	CacheDir   string
+	Profile    string // Profile name for cache file naming
 }
 
 // NewClient creates a new API client.
@@ -31,6 +35,36 @@ func NewClient(schoolHost string) *Client {
 			Timeout: 30 * time.Second,
 		},
 	}
+}
+
+func (c *Client) cacheFile(name string) string {
+	if c.CacheDir == "" {
+		return ""
+	}
+	safeName := fmt.Sprintf("%s-%s-%s.json", name, c.Profile, strings.ReplaceAll(c.BaseURL, "/", "_"))
+	return filepath.Join(c.CacheDir, safeName)
+}
+
+func (c *Client) saveCache(name string, v interface{}) {
+	file := c.cacheFile(name)
+	if file == "" {
+		return
+	}
+	_ = os.MkdirAll(filepath.Dir(file), 0755)
+	data, _ := json.Marshal(v)
+	_ = os.WriteFile(file, data, 0600)
+}
+
+func (c *Client) loadCache(name string, v interface{}) error {
+	file := c.cacheFile(name)
+	if file == "" {
+		return fmt.Errorf("cache disabled")
+	}
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
 }
 
 // Login authenticates with the API and stores the access token.
@@ -67,35 +101,70 @@ func (c *Client) Login(username, password string) error {
 func (c *Client) FetchTimetable() (*TimetableResponse, error) {
 	var result TimetableResponse
 	err := c.get("/api/3/timetable/actual", &result)
-	return &result, err
+	if err == nil {
+		c.saveCache("timetable", &result)
+		return &result, nil
+	}
+	if c.loadCache("timetable", &result) == nil {
+		return &result, nil
+	}
+	return nil, err
 }
 
 // FetchHomeworks retrieves the homework assignments.
 func (c *Client) FetchHomeworks() (*HomeworksResponse, error) {
 	var result HomeworksResponse
 	err := c.get("/api/3/homeworks", &result)
-	return &result, err
+	if err == nil {
+		c.saveCache("homeworks", &result)
+		return &result, nil
+	}
+	if c.loadCache("homeworks", &result) == nil {
+		return &result, nil
+	}
+	return nil, err
 }
 
 // FetchMarks retrieves the student's grades.
 func (c *Client) FetchMarks() (*MarksResponse, error) {
 	var result MarksResponse
 	err := c.get("/api/3/marks", &result)
-	return &result, err
+	if err == nil {
+		c.saveCache("marks", &result)
+		return &result, nil
+	}
+	if c.loadCache("marks", &result) == nil {
+		return &result, nil
+	}
+	return nil, err
 }
 
 // FetchAbsence retrieves the student's absence.
 func (c *Client) FetchAbsence() (*AbsenceResponse, error) {
 	var result AbsenceResponse
 	err := c.get("/api/3/absence/student", &result)
-	return &result, err
+	if err == nil {
+		c.saveCache("absence", &result)
+		return &result, nil
+	}
+	if c.loadCache("absence", &result) == nil {
+		return &result, nil
+	}
+	return nil, err
 }
 
 // FetchUserInfo retrieves the student's profile info.
 func (c *Client) FetchUserInfo() (*UserInfo, error) {
 	var result UserInfo
 	err := c.get("/api/3/user", &result)
-	return &result, err
+	if err == nil {
+		c.saveCache("info", &result)
+		return &result, nil
+	}
+	if c.loadCache("info", &result) == nil {
+		return &result, nil
+	}
+	return nil, err
 }
 
 func (c *Client) get(path string, v interface{}) error {
