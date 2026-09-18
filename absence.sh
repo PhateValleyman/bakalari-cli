@@ -114,14 +114,14 @@ if [[ -n "$DAILY_TOTALS" ]]; then
             if [[ "$missed" -gt 0 || "$unsolved" -gt 0 ]]; then
                 row_color="$C_RESET"
             else
-                row_color="$C_DIM"
+                row_color="$C_GRAY"
             fi
 
             printf '%s%-12s %-8s %7s %9s %7s %7s %12s%s\n' \
                 "$row_color" "$date" "$day_name" "$hours" "$missed" "$late" "$soon" "$unsolved" "$C_RESET"
         done
 else
-    printf '%s%-12s%s\n' "$C_DIM" "(žádná data)" "$C_RESET"
+    printf '%s%-12s%s\n' "$C_GRAY" "(žádná data)" "$C_RESET"
 fi
 
 printf '%s\n' '---------------------------------------------------------------'
