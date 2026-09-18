@@ -20,16 +20,18 @@ PORT_FILE="$TMP_DIR/port"
 
 cat >"$CONFIG" <<'EOF'
 [general]
-school = "default.bakalari.test"
+user01 = "mock"
+
+[mock]
+host = "mock.bakalari.test"
+user = "test-user"
+pass = "test-pass"
+token = ""
 max_hours = 2
 
 [colors]
 M = 226
 
-[mock.bakalari.test]
-user = "test-user"
-pass = "test-pass"
-TOKEN = ""
 EOF
 
 python3 "$ROOT_DIR/tests/mock_server.py" >"$PORT_FILE" &
@@ -55,7 +57,7 @@ UKOLY_OUTPUT="$TMP_DIR/ukoly.out"
 ZNAMKY_OUTPUT="$TMP_DIR/znamky.out"
 ABSENCE_OUTPUT="$TMP_DIR/absence.out"
 
-"$ROOT_DIR/rozvrh.sh" --school mock.bakalari.test >"$ROZVRH_OUTPUT"
+"$ROOT_DIR/rozvrh.sh" --user mock >"$ROZVRH_OUTPUT"
 
 grep -Fq 'TOKEN = "test-token"' "$CONFIG"
 grep -Fq $'\033[48;5;226m' "$ROZVRH_OUTPUT"
