@@ -122,12 +122,15 @@ resolve_user() {
         log_error "V [general] není nakonfigurován žádný userNN."
         return "$EXIT_CONFIG"
     fi
-    for key in host user pass token name class max_hours; do
-        value="$(config_value "$BAKALARI_USER" "$key")"
-        printf -v "BAKALARI_${key^^}" '%s' "$value"
-    done
+    BAKALARI_HOST="$(config_value "$BAKALARI_USER" host)"
+    BAKALARI_LOGIN="$(config_value "$BAKALARI_USER" user)"
+    BAKALARI_PASS="$(config_value "$BAKALARI_USER" pass)"
+    BAKALARI_TOKEN="$(config_value "$BAKALARI_USER" token)"
+    BAKALARI_NAME="$(config_value "$BAKALARI_USER" name)"
+    BAKALARI_CLASS="$(config_value "$BAKALARI_USER" class)"
+    BAKALARI_MAX_HOURS="$(config_value "$BAKALARI_USER" max_hours)"
     [[ -n "$BAKALARI_HOST" ]] || { log_error "V konfiguraci chybí "host" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
-    [[ -n "$BAKALARI_USER_NAME" ]] || { log_error "V konfiguraci chybí "user" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
+    [[ -n "$BAKALARI_LOGIN" ]] || { log_error "V konfiguraci chybí "user" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
     [[ -n "$BAKALARI_PASS" ]] || { log_error "V konfiguraci chybí "pass" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
     return 0
 }
