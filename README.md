@@ -4,6 +4,8 @@ Malé shellové nástroje pro práci s API systému Bakaláři z terminálu / Te
 
 - **`rozvrh.sh`** – vypíše barevný rozvrh přímo do terminálu.
 - **`ukoly.sh`** – zkontroluje nesplněné domácí úkoly a (na Androidu v Termuxu) o nich pošle notifikaci přes `termux-notification`.
+- **`znamky.sh`** – zobrazí známky a průměry.
+- **`absence.sh`** – zobrazí souhrn absence a přehled podle předmětů.
 
 Oba skripty sdílejí stejnou konfiguraci, přihlašovací logiku a barevný výstup přes `lib/common.sh`.
 
@@ -100,6 +102,8 @@ Přístupový token se po prvním přihlášení uloží zpět do konfigurace a 
 ```bash
 ./rozvrh.sh          # barevný rozvrh
 ./ukoly.sh           # kontrola nesplněných úkolů (+ notifikace v Termuxu)
+./znamky.sh          # známky a průměry
+./absence.sh         # absence
 
 ./rozvrh.sh --help
 ./ukoly.sh  --help
@@ -134,9 +138,13 @@ CI automaticky spouští `shellcheck` nad shellovými skripty a následně stejn
 bakalari-cli/
 ├── rozvrh.sh            # zobrazení rozvrhu
 ├── ukoly.sh             # kontrola domácích úkolů + notifikace
+├── znamky.sh            # známky a průměry
+├── absence.sh           # absence
 ├── lib/
 │   └── common.sh        # sdílená konfigurace, login, barvy, logování
 ├── config.toml.example  # vzor konfigurace
+├── docs/
+│   └── api-notes.md     # použité tvary odpovědí API v3
 └── TODOO.md             # plánované úpravy a roadmapa (mj. přechod na Go)
 ```
 
