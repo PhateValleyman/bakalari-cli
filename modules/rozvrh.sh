@@ -205,24 +205,15 @@ if [[ -z "$TABLE" ]]; then
     exit "$EXIT_DATA"
 fi
 
-# Read configured subject colors while preserving the original defaults.
-COLOR_HV="${SUBJECT_COLORS[Hv]}"
-COLOR_M="${SUBJECT_COLORS[M]}"
-COLOR_CJ="${SUBJECT_COLORS[Čj]}"
-COLOR_PRV="${SUBJECT_COLORS[Prv]}"
-COLOR_VV="${SUBJECT_COLORS[Vv]}"
-COLOR_PC="${SUBJECT_COLORS[Pč]}"
-COLOR_TV="${SUBJECT_COLORS[Tv]}"
+# Build the color string for awk to handle dynamic subject colors.
+COLOR_STR=""
+for s in "${!SUBJECT_COLORS[@]}"; do
+    [[ -n "$s" ]] && COLOR_STR+="$s:${SUBJECT_COLORS[$s]},"
+done
 
 # Render the timetable as a bordered terminal table.
 printf '%s\n' "$TABLE" | "$AWK" \
-    -v color_hv="$COLOR_HV" \
-    -v color_m="$COLOR_M" \
-    -v color_cj="$COLOR_CJ" \
-    -v color_prv="$COLOR_PRV" \
-    -v color_vv="$COLOR_VV" \
-    -v color_pc="$COLOR_PC" \
-    -v color_tv="$COLOR_TV" '
+    -v color_str="$COLOR_STR" '
     function rep(c, n,   s, i) {
         s = ""
         for (i = 0; i < n; i++) s = s c
@@ -246,13 +237,13 @@ printf '%s\n' "$TABLE" | "$AWK" \
         HID = ESC "[48;5;255m" ESC "[38;5;245m"
         RST = ESC "[0m"
 
-        col["Hv"]  = color_hv
-        col["M"]   = color_m
-        col["Čj"]  = color_cj
-        col["Prv"] = color_prv
-        col["Vv"]  = color_vv
-        col["Pč"]  = color_pc
-        col["Tv"]  = color_tv
+        # Parse dynamic color string
+        n = split(color_str, pairs, ",")
+        for (i = 1; i <= n; i++) {
+            if (split(pairs[i], kv, ":") == 2) {
+                col[kv[1]] = kv[2]
+            }
+        }
     }
 
     NR == 1 {
