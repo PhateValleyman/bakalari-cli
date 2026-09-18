@@ -97,6 +97,13 @@ Neznámý předmět, který nemá vlastní konfiguraci ani vestavěnou barvu, po
 
 Přístupový token se po prvním přihlášení uloží zpět do konfigurace a při dalších spuštěních se skripty nejdřív pokusí použít jej — teprve když je neplatný nebo chybí, proběhne nové přihlášení k Bakalářům.
 
+### Exit statusy
+
+- `0` – úspěch
+- `2` – chyba konfigurace nebo argumentů
+- `3` – chyba sítě/API transportu
+- `4` – neplatná nebo neočekávaná data z API
+
 ## Použití
 
 ```bash
