@@ -54,7 +54,7 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
       - `FetchTimetable(token) (Timetable, error)`
       - `FetchHomeworks(token) (Homeworks, error)`
       - `LoadConfig(path) (Config, error)` / `SaveToken(...)`
-- [ ] Zvolit CLI framework (`cobra` nebo `urfave/cli`) tak, aby
+- [x] Zvolit CLI framework (`cobra` nebo `urfave/cli`) tak, aby
       `bakalari rozvrh` a `bakalari ukoly` byly subpříkazy jednoho binárku,
       ne dva samostatné skripty.
 - [ ] Barevný výstup v Go přes `fatih/color` nebo `lipgloss` – zachovat
