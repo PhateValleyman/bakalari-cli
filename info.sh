@@ -46,30 +46,77 @@ if ! USER_DATA="$(fetch_json "$USER_URL" "$TOKEN" 2>/dev/null)"; then
 fi
 printf '%s' "$USER_DATA" | jq -e 'type == "object"' >/dev/null 2>&1 || { log_error "Neplatná odpověď pro informace o uživateli."; exit "$EXIT_DATA"; }
 
-ABSENCE_DATA="$(fetch_json "$ABSENCE_URL" "$TOKEN" 2>/dev/null || printf '%s' '{"Absences":[],"AbsencesPerSubject":[]}')"
-MARKS_DATA="$(fetch_json "$MARKS_URL" "$TOKEN" 2>/dev/null || printf '%s' '{"Subjects":[]}')"
-printf '%s' "$ABSENCE_DATA" | jq -e 'type == "object" and (.Absences | type == "array")' >/dev/null 2>&1 || ABSENCE_DATA='{"Absences":[],"AbsencesPerSubject":[]}'
-printf '%s' "$MARKS_DATA" | jq -e 'type == "object" and (.Subjects | type == "array")' >/dev/null 2>&1 || MARKS_DATA='{"Subjects":[]}'
-
-TIMETABLE_DATA=""
-if [[ -n "$TOKEN" ]]; then
-    TIMETABLE_DATA="$(fetch_json "$TIMETABLE_URL" "$TOKEN" 2>/dev/null || true)"
+CONFIG_CACHE_DIR="$(config_value general cache_dir)"
+if [[ -z "$CONFIG_CACHE_DIR" ]]; then
+    CONFIG_CACHE_DIR="$(config_value "$BAKALARI_USER" cache_dir)"
 fi
-if ! printf '%s' "$TIMETABLE_DATA" | jq -e 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' >/dev/null 2>&1; then
-    CONFIG_CACHE_DIR="$(config_value general cache_dir)"
-    if [[ -z "$CONFIG_CACHE_DIR" ]]; then
-        CONFIG_CACHE_DIR="$(config_value "$BAKALARI_USER" cache_dir)"
-    fi
-    if [[ -n "$CONFIG_CACHE_DIR" && -z "${BAKALARI_CACHE_DIR:-}" ]]; then
-        BAKALARI_CACHE_DIR="$CONFIG_CACHE_DIR"
-    fi
-    CACHE_NAME="timetable-$BAKALARI_USER-$SCHOOL.json"
-    TIMETABLE_DATA="$(cache_load "$CACHE_NAME" 2>/dev/null || true)"
-fi
-if ! printf '%s' "$TIMETABLE_DATA" | jq -e 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' >/dev/null 2>&1; then
-    TIMETABLE_DATA=""
+if [[ -n "$CONFIG_CACHE_DIR" && -z "${BAKALARI_CACHE_DIR:-}" ]]; then
+    BAKALARI_CACHE_DIR="$CONFIG_CACHE_DIR"
 fi
 
+DATA_FROM_CACHE=0
+LATEST_STAMP=0
+USER_CACHE="info-$BAKALARI_USER-$SCHOOL-user.json"
+ABSENCE_CACHE="info-$BAKALARI_USER-$SCHOOL-absence.json"
+MARKS_CACHE="info-$BAKALARI_USER-$SCHOOL-marks.json"
+TIMETABLE_CACHE="timetable-$BAKALARI_USER-$SCHOOL.json"
+
+cache_stamp_save() {
+    local name="$1" file
+    file="$(cache_file "${name}.timestamp")" || return 1
+    printf '%s\n' "$(date +%s)" >"$file"
+    chmod 600 "$file" 2>/dev/null || true
+}
+
+cache_stamp_load() {
+    local name="$1" file
+    file="$(cache_file "${name}.timestamp")" || return 1
+    [[ -s "$file" ]] || return 1
+    cat "$file"
+}
+
+cache_stamp_text() {
+    local ts="$1"
+    [[ "$ts" =~ ^[0-9]+$ ]] || return 1
+    date -d "@$ts" '+%d.%m.%Y %H:%M:%S'
+}
+
+load_data() {
+    local cache_name="$1" url="$2" validator="$3" required="$4"
+    local data=""
+    if data="$(fetch_json "$url" "$TOKEN" 2>/dev/null)" &&
+       printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1; then
+        cache_save "$cache_name" "$data" || log_warn "Nepodařilo se uložit cache $cache_name."
+        cache_stamp_save "$cache_name" || true
+        printf '%s' "$data"
+        return 0
+    fi
+    if data="$(cache_load "$cache_name" 2>/dev/null)" &&
+       printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1; then
+        DATA_FROM_CACHE=1
+        printf '%s' "$data"
+        return 0
+    fi
+    if [[ "$required" == "1" ]]; then
+        return 1
+    fi
+    printf '%s' '{}'
+}
+
+USER_DATA="$(load_data "$USER_CACHE" "$USER_URL" 'type == "object"' 1)" || {
+    log_error "Informace o uživateli nejsou dostupné online ani z cache."
+    exit "$EXIT_NETWORK"
+}
+ABSENCE_DATA="$(load_data "$ABSENCE_CACHE" "$ABSENCE_URL" 'type == "object" and (.Absences | type == "array")' 0)"
+MARKS_DATA="$(load_data "$MARKS_CACHE" "$MARKS_URL" 'type == "object" and (.Subjects | type == "array")' 0)"
+TIMETABLE_DATA="$(load_data "$TIMETABLE_CACHE" "$TIMETABLE_URL" 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' 0)"
+
+for cache_name in "$USER_CACHE" "$ABSENCE_CACHE" "$MARKS_CACHE" "$TIMETABLE_CACHE"; do
+    stamp="$(cache_stamp_load "$cache_name" 2>/dev/null || true)"
+    if [[ "$stamp" =~ ^[0-9]+$ && "$stamp" -gt "$LATEST_STAMP" ]]; then
+        LATEST_STAMP="$stamp"
+    fi
+done
 c256() { printf '\033[38;5;%sm' "$1"; }
 row() { printf '%s%-27s%s %s%s%s\n' "$(c256 "$3")" "$1" "$C_RESET" "$(c256 255)" "$2" "$C_RESET"; }
 
@@ -119,8 +166,22 @@ $(printf '%s' "$ABSENCE_DATA" | jq -r '
 EOF
 OVERALL_AVG="$(printf '%s' "$MARKS_DATA" | jq -r '[.Subjects[]?.AverageText | select(type=="string" and length>0) | gsub(",";".") | tonumber?] | if length==0 then "-" else ((add/length)*100|round/100|tostring|gsub("\\.";",")) end')"
 
+if (( LATEST_STAMP > 0 )); then
+    UPDATE_TEXT="$(cache_stamp_text "$LATEST_STAMP" 2>/dev/null || printf '%s' "$LATEST_STAMP")"
+else
+    UPDATE_TEXT="-"
+fi
+if (( DATA_FROM_CACHE )); then
+    UPDATE_COLOR=196
+    UPDATE_STATE="CACHE"
+else
+    UPDATE_COLOR=46
+    UPDATE_STATE="AKTUÁLNÍ"
+fi
+
 printf '%s%s=== Informace o uživateli ===%s\n' "$C_BOLD" "$(c256 39)" "$C_RESET"
 printf '%sProfil: %s%s\n' "$(c256 244)" "$BAKALARI_USER" "$C_RESET"
+printf '%sPoslední aktualizace: %s %s%s%s\n' "$(c256 244)" "$UPDATE_STATE" "$(c256 "$UPDATE_COLOR")" "$UPDATE_TEXT" "$C_RESET"
 row "Jméno:" "${FIRST_NAME:--}" 45
 row "Příjmení:" "${LAST_NAME:--}" 45
 row "Celé jméno:" "${FULL_NAME:--}" 45
@@ -140,12 +201,7 @@ if [[ "$MARKS_COUNT" -eq 0 ]]; then
     printf '%s(žádné známky)%s\n' "$(c256 244)" "$C_RESET"
 else
     printf '%s' "$MARKS_DATA" | jq -r '.Subjects[] | [(.Subject.Abbrev // .Subject.Name // "?"),(.Subject.Name // .Subject.Abbrev // "?"),(.AverageText // "-")] | @tsv' |
-    while IFS=
-        printf '%s%-28s %-12s%s\n' "$(c256 226)" "$abbrev ($name)" "$average" "$C_RESET"
-    done
-    printf '%sCelkový průměr předmětů:%s %s%s%s\n' "$(c256 39)" "$C_RESET" "$(c256 226)" "$OVERALL_AVG" "$C_RESET"
-fi
-\t' read -r abbrev name average; do
+    while IFS=$'\t' read -r abbrev name average; do
         printf '%s%-28s %-12s%s\n' "$(c256 226)" "$abbrev ($name)" "$average" "$C_RESET"
     done
     printf '%sCelkový průměr předmětů:%s %s%s%s\n' "$(c256 39)" "$C_RESET" "$(c256 226)" "$OVERALL_AVG" "$C_RESET"
