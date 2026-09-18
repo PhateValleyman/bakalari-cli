@@ -60,8 +60,25 @@ var infoCmd = &cobra.Command{
 			}
 		}
 
-		absence, _ := client.FetchAbsence()
-		marks, _ := client.FetchMarks()
+		absence, absenceErr := client.FetchAbsence()
+		if absenceErr != nil {
+			if cached, cacheErr := client.LoadCachedAbsence(); cacheErr == nil {
+				log.Printf("Warning: using cached absence data: %v", absenceErr)
+				absence = cached
+			} else {
+				absence = nil
+			}
+		}
+
+		marks, marksErr := client.FetchMarks()
+		if marksErr != nil {
+			if cached, cacheErr := client.LoadCachedMarks(); cacheErr == nil {
+				log.Printf("Warning: using cached grade data: %v", marksErr)
+				marks = cached
+			} else {
+				marks = nil
+			}
+		}
 
 		bakalari.RenderInfo(userInfo, absence, marks)
 	},
