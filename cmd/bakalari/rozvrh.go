@@ -47,6 +47,9 @@ var rozvrhCmd = &cobra.Command{
 			// Update token in config (in memory for now, save later)
 			profile.Token = client.Token
 			cfg.Profiles[profileName] = profile
+			if err := bakalari.SaveToken(configPath, profileName, client.Token); err != nil {
+				log.Printf("Warning: failed to save token: %v", err)
+			}
 
 			timetable, err = client.FetchTimetable()
 			if err != nil {
