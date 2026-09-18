@@ -34,7 +34,7 @@ ipkg install jq curl gawk
 ```bash
 git clone https://github.com/PhateValleyman/bakalari-cli.git
 cd bakalari-cli
-chmod +x rozvrh.sh ukoly.sh
+chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh
 
 mkdir -p ~/.config/bakalari
 cp config.toml.example ~/.config/bakalari/config.toml
