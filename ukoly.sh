@@ -49,8 +49,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-require_cmd curl jq || exit 1
-require_config || exit 1
+require_cmd curl jq || exit "$EXIT_CONFIG"
+require_config || exit "$EXIT_CONFIG"
 
 SCHOOL="${SCHOOL_OVERRIDE:-$(config_value general school)}"
 SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
@@ -64,11 +64,11 @@ TOKEN="$(config_value "$SCHOOL" TOKEN)"
 
 if [[ -z "$USERNAME" ]]; then
     log_error "Chybí \"user\" v $BAKALARI_CONFIG"
-    exit 1
+    exit "$EXIT_CONFIG"
 fi
 if [[ -z "$PASSWORD" ]]; then
     log_error "Chybí \"pass\" v $BAKALARI_CONFIG"
-    exit 1
+    exit "$EXIT_CONFIG"
 fi
 
 fetch_homeworks() {
@@ -83,14 +83,14 @@ if [[ -z "$TOKEN" ]] || ! RESPONSE="$(fetch_homeworks 2>/dev/null)"; then
     save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
     if ! RESPONSE="$(fetch_homeworks)"; then
         log_error "Požadavek na úkoly selhal i po přihlášení."
-        exit 1
+        exit "$EXIT_NETWORK"
     fi
 fi
 
 if ! printf '%s' "$RESPONSE" | jq -e '.Homeworks' >/dev/null 2>&1; then
     log_error "Neplatná odpověď z Bakalářů API."
     printf '%s' "$RESPONSE" | jq . 2>/dev/null || printf '%s\n' "$RESPONSE"
-    exit 1
+    exit "$EXIT_DATA"
 fi
 
 UNFINISHED="$(printf '%s' "$RESPONSE" | jq -r '
