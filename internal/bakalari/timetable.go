@@ -8,6 +8,12 @@ import (
 
 // RenderTimetable prints a formatted timetable to the console.
 func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[string]int) {
+	if data == nil {
+		return
+	}
+	if maxHours < 0 {
+		maxHours = 0
+	}
 	colors := DefaultSubjectColors()
 	for k, v := range customColors {
 		colors[k] = v
