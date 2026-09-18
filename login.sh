@@ -80,12 +80,8 @@ if [[ ! "$PROFILE" =~ ^[A-Za-z0-9._-]+$ ]]; then
 fi
 
 profile_exists() {
-	awk -v section="$PROFILE" '
-		$0 ~ "^\\\\[" section "\\\\][[:space:]]*$" { found=1; exit }
-		END { exit(found ? 0 : 1) }
-	' "$BAKALARI_CONFIG"
+	grep -Fqx "[$PROFILE]" "$BAKALARI_CONFIG"
 }
-
 if profile_exists; then
 	log_info "Profil [$PROFILE] již existuje; přihlašovací údaje budou aktualizovány."
 	DEFAULT_HOST="$(config_value "$PROFILE" host)"
@@ -161,19 +157,21 @@ upsert_profile() {
 
 	tmp="$(mktemp "${file}.tmp.XXXXXX")" || return 1
 
-	awk -v section="$section" \
-		-v host="$host" -v login="$login" -v pass="$pass" \
-		-v max_hours="$max_hours" -v token="$token" '
+	awk -v section="$section" 		-v host="$host" -v login="$login" -v pass="$pass" 		-v max_hours="$max_hours" -v token="$token" '
 		BEGIN { insec=0; found=0 }
-		$0 ~ "^\\\\[" section "\\\\][[:space:]]*$" {
+		{
+			header=$0
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
+		}
+		header == "[" section "]" {
 			insec=1
 			found=1
 			print
-			print "host = \\"" host "\\""
-			print "user = \\"" login "\\""
-			print "pass = \\"" pass "\\""
+			print "host = \"" host "\""
+			print "user = \"" login "\""
+			print "pass = \"" pass "\""
 			print "max_hours = " max_hours
-			print "token = \\"" token "\\""
+			print "token = \"" token "\""
 			next
 		}
 		insec && /^[[:space:]]*host[[:space:]]*=/ { next }
@@ -181,17 +179,21 @@ upsert_profile() {
 		insec && /^[[:space:]]*pass[[:space:]]*=/ { next }
 		insec && /^[[:space:]]*max_hours[[:space:]]*=/ { next }
 		insec && /^[[:space:]]*token[[:space:]]*=/ { next }
-		/^[[:space:]]*\[/ { insec=0 }
+		/^[[[:space:]]/ {
+			header=$0
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
+			if (substr(header, 1, 1) == "[") insec=0
+		}
 		{ print }
 		END {
 			if (!found) {
 				print ""
 				print "[" section "]"
-				print "host = \\"" host "\\""
-				print "user = \\"" login "\\""
-				print "pass = \\"" pass "\\""
+				print "host = \"" host "\""
+				print "user = \"" login "\""
+				print "pass = \"" pass "\""
 				print "max_hours = " max_hours
-				print "token = \\"" token "\\""
+				print "token = \"" token "\""
 				print "name = \"\""
 				print "class = \"\""
 			}
@@ -204,7 +206,6 @@ upsert_profile() {
 	chmod 600 "$tmp" 2>/dev/null || true
 	mv -f "$tmp" "$file"
 }
-
 ensure_general_profile() {
 	local file="$1" section="$2" tmp num
 
