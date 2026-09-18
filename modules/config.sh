@@ -78,8 +78,50 @@ color_text() {
     esac
 }
 
+color_swatch() {
+    local color="$1" name="$2" marker="${3:-}"
+    printf '%s\033[48;5;%sm%s %-20s \033[0m' "$marker" "$color" \
+        "$(color_text "$color")" "$name"
+}
+
+render_color_picker() {
+    local values_name="$1" labels_name="$2" selected="$3" color_index="$4"
+    local -n values_ref="$values_name"
+    local -n labels_ref="$labels_name"
+    local i field value marker palette_marker
+    printf '\033[2J\033[H'
+    printf '%s%-24s %-8s %-12s    %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Náhled" \
+        "Vyber barvu (↑/↓, Enter, Esc)" "$C_RESET"
+    printf '%s\n' '--------------------------------------------------------------------------------'
+    for i in "${!labels_ref[@]}"; do
+        field="${values_ref[i]}"
+        value="${values_ref[$field]:-}"
+        [[ "$field" == "pass" ]] && value="********"
+        [[ -n "$value" ]] || value="-"
+        marker=" "
+        [[ "$i" == "$selected" ]] && marker=">"
+        printf '%s %-20s %-8s %b  ' "$marker" "${labels_ref[i]}" "$value" \
+            "$(color_preview "$value")"
+        if (( i < ${#COLOR_NAMES[@]} )); then
+            palette_marker=" "
+            (( i == color_index )) && palette_marker=">"
+            color_swatch "${COLOR_VALUES[i]}" "${COLOR_NAMES[i]}" "$palette_marker"
+        fi
+        printf '\n'
+    done
+    for ((i=${#labels_ref[@]}; i<${#COLOR_NAMES[@]}; i++)); do
+        printf '%-48s' ''
+        palette_marker=" "
+        (( i == color_index )) && palette_marker=">"
+        color_swatch "${COLOR_VALUES[i]}" "${COLOR_NAMES[i]}" "$palette_marker"
+        printf '\n'
+    done
+    printf '\n%sEsc%s zrušit   %sEnter%s potvrdit\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
+}
+
 select_color_value() {
-    local current="$1" i index=0 key name
+    local current="$1" values_name="$2" labels_name="$3" selected="$4"
+    local i index=0 key old_stty
     if ! [[ -t 0 && -t 2 ]]; then
         input_value "Barva (0-255)" "$current"
         return
@@ -87,52 +129,24 @@ select_color_value() {
     for i in "${!COLOR_VALUES[@]}"; do
         [[ "${COLOR_VALUES[i]}" == "$current" ]] && index="$i"
     done
-    old_stty="$(stty -g)"
-    stty -echo -icanon min 1 time 0
-    trap 'stty "$old_stty" 2>/dev/null || true; printf "\033[0m\n" >&2' RETURN
+    old_stty="$(stty -g)" || return 1
+    stty -echo -icanon min 1 time 0 || return 1
     while :; do
-        printf '\033[2J\033[H' >&2
-        printf '%sVyber barvu (↑/↓, Enter potvrdit, Esc zrušit)%s\n\n' "$C_BOLD" "$C_RESET" >&2
-        for i in "${!COLOR_VALUES[@]}"; do
-            name="${COLOR_NAMES[i]}"
-            if (( i == index )); then
-                printf '%s> \033[48;5;%sm%s %-22s \033[0m%s\n' \
-                    "$C_GREEN" "${COLOR_VALUES[i]}" "$(color_text "${COLOR_VALUES[i]}")" \
-                    "$name" "$C_RESET" >&2
-            else
-                printf '  \033[48;5;%sm%s %-22s \033[0m\n' \
-                    "${COLOR_VALUES[i]}" "$(color_text "${COLOR_VALUES[i]}")" \
-                    "$name" >&2
-            fi
-        done
+        render_color_picker "$values_name" "$labels_name" "$selected" "$index" >&2
         IFS= read -r -s -n1 key
         if [[ "$key" == $'\e' ]]; then
             IFS= read -r -s -n2 key
             case "$key" in
                 '[A') if (( index > 0 )); then ((index--)); fi ;;
                 '[B') if (( index < ${#COLOR_VALUES[@]} - 1 )); then ((index++)); fi ;;
-                '') stty "$old_stty"; trap - RETURN; return 1 ;;
+                '') stty "$old_stty"; return 1 ;;
             esac
         elif [[ "$key" == $'\n' || "$key" == $'\r' ]]; then
-            stty "$old_stty"; trap - RETURN
+            stty "$old_stty"
             printf '%s' "${COLOR_VALUES[index]}"
             return 0
         fi
     done
-}
-
-show_color_values() {
-    local -n values_ref="$1" -n labels_ref="$2"
-    local i field value
-    printf '\n%s%-20s %-8s %s%s\n' "$C_BOLD" "Barva" "Číslo" "Náhled" "$C_RESET" >&2
-    printf '%s\n' '------------------------------------------------' >&2
-    for i in "${!labels_ref[@]}"; do
-        field="${values_ref[i]}"
-        [[ "$field" == color_* ]] || continue
-        value="${global_values[$field]:-${VALUES[$field]:-}}"
-        printf '%-20s %-8s %b\n' "${labels_ref[i]}" "${value:--}" "$(color_preview "$value")" >&2
-    done
-    printf '\n' >&2
 }
 
 select_profile() {
@@ -188,7 +202,6 @@ edit_global() {
 
     while :; do
         if command -v gum >/dev/null 2>&1; then
-            show_color_values global_fields global_labels
             menu_items=("← Zpět")
             for i in "${!global_labels[@]}"; do
                 field="${global_fields[i]}"
@@ -209,7 +222,7 @@ edit_global() {
                     selected="$i"
                     field="${global_fields[i]}"
                     if [[ "$field" == color_* ]]; then
-                        new_value="$(select_color_value "${global_values[$field]:-}")"
+                        new_value="$(select_color_value "${global_values[$field]:-}" global_fields global_labels "$i")"
                     else
                         new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
                     fi
@@ -241,7 +254,7 @@ edit_global() {
                 selected="$i"
                 field="${global_fields[i]}"
                 if [[ "$field" == color_* ]]; then
-                    new_value="$(select_color_value "${global_values[$field]:-}")"
+                    new_value="$(select_color_value "${global_values[$field]:-}" global_fields global_labels "$i")"
                 else
                     new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
                 fi
@@ -353,7 +366,7 @@ edit_field() {
     field="${FIELDS[index]}"
     value="${VALUES[$field]:-}"
     if [[ "$field" == color_* ]]; then
-        new_value="$(select_color_value "$value")" || return 0
+        new_value="$(select_color_value "$value" FIELDS LABELS "$index")" || return 0
         [[ -z "$new_value" || "$new_value" =~ ^[0-9]+$ ]] &&
             { [[ -z "$new_value" || "$new_value" -le 255 ]] || return 1; } ||
             return 1
@@ -369,9 +382,6 @@ edit_field() {
 selected=0
 while :; do
     if command -v gum >/dev/null 2>&1; then
-        color_fields=("${FIELDS[@]:6}")
-        color_labels=("${LABELS[@]:6}")
-        show_color_values color_fields color_labels
         menu_items=("← Zpět")
         for i in "${!LABELS[@]}"; do
             field="${FIELDS[i]}"
