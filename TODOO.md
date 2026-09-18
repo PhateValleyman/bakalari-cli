@@ -26,9 +26,8 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
       vývoji) jako `tests/` s jednoduchými smoke testy pro `rozvrh.sh`
       a `ukoly.sh`.
 - [x] `shellcheck` do CI (GitHub Actions) + smoke test workflow – ať se regrese chytí automaticky.
-- [ ] Podpora více škol/účtů zároveň (config už to připouští – `[general]`
-      + libovolná sekce podle domény – ale skripty zatím berou jen jednu
-      `school` z `[general]`; přidat `--school` argument).
+- [x] Podpora více škol/účtů zároveň: skripty podporují `--school DOMÉNA`
+      (nebo `--school=DOMÉNA`) a použijí odpovídající sekci podle domény.
 - [ ] Přidat `znamky.sh` (známky) a `absence.sh` (absence) – stejný vzor
       jako `ukoly.sh`, jen jiný endpoint a jiné `jq` mapování.
 - [ ] Sjednotit chybové kódy exit statusů (dnes všude `exit 1`; do budoucna
