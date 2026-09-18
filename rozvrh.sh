@@ -51,6 +51,12 @@ done
 require_cmd curl jq awk || exit "$EXIT_CONFIG"
 require_config || exit "$EXIT_CONFIG"
 
+# Allow the config file to override the default cache directory.
+CONFIG_CACHE_DIR="$(config_value general cache_dir)"
+if [[ -n "$CONFIG_CACHE_DIR" && -z "${BAKALARI_CACHE_DIR:-}" ]]; then
+    BAKALARI_CACHE_DIR="$CONFIG_CACHE_DIR"
+fi
+
 SCHOOL="${SCHOOL_OVERRIDE:-$(config_value general school)}"
 SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
 MAX_HOUR="$(config_value general max_hours)"
