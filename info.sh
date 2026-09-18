@@ -32,6 +32,7 @@ LOGIN_URL="$API_BASE_URL/api/login"
 USER_URL="$API_BASE_URL/api/3/user"
 ABSENCE_URL="$API_BASE_URL/api/3/absence/student"
 MARKS_URL="$API_BASE_URL/api/3/marks"
+TIMETABLE_URL="$API_BASE_URL/api/3/timetable/actual"
 
 login_again() {
     TOKEN="$(bakalari_login "$BAKALARI_USER" "$LOGIN_URL" "$USERNAME" "$PASSWORD")" || return 1
@@ -49,6 +50,25 @@ ABSENCE_DATA="$(fetch_json "$ABSENCE_URL" "$TOKEN" 2>/dev/null || printf '%s' '{
 MARKS_DATA="$(fetch_json "$MARKS_URL" "$TOKEN" 2>/dev/null || printf '%s' '{"Subjects":[]}')"
 printf '%s' "$ABSENCE_DATA" | jq -e 'type == "object" and (.Absences | type == "array")' >/dev/null 2>&1 || ABSENCE_DATA='{"Absences":[],"AbsencesPerSubject":[]}'
 printf '%s' "$MARKS_DATA" | jq -e 'type == "object" and (.Subjects | type == "array")' >/dev/null 2>&1 || MARKS_DATA='{"Subjects":[]}'
+
+TIMETABLE_DATA=""
+if [[ -n "$TOKEN" ]]; then
+    TIMETABLE_DATA="$(fetch_json "$TIMETABLE_URL" "$TOKEN" 2>/dev/null || true)"
+fi
+if ! printf '%s' "$TIMETABLE_DATA" | jq -e 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' >/dev/null 2>&1; then
+    CONFIG_CACHE_DIR="$(config_value general cache_dir)"
+    if [[ -z "$CONFIG_CACHE_DIR" ]]; then
+        CONFIG_CACHE_DIR="$(config_value "$BAKALARI_USER" cache_dir)"
+    fi
+    if [[ -n "$CONFIG_CACHE_DIR" && -z "${BAKALARI_CACHE_DIR:-}" ]]; then
+        BAKALARI_CACHE_DIR="$CONFIG_CACHE_DIR"
+    fi
+    CACHE_NAME="timetable-$BAKALARI_USER-$SCHOOL.json"
+    TIMETABLE_DATA="$(cache_load "$CACHE_NAME" 2>/dev/null || true)"
+fi
+if ! printf '%s' "$TIMETABLE_DATA" | jq -e 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' >/dev/null 2>&1; then
+    TIMETABLE_DATA=""
+fi
 
 c256() { printf '\033[38;5;%sm' "$1"; }
 row() { printf '%s%-27s%s %s%s%s\n' "$(c256 "$3")" "$1" "$C_RESET" "$(c256 255)" "$2" "$C_RESET"; }
@@ -69,6 +89,17 @@ if [[ -z "$FIRST_NAME" || -z "$LAST_NAME" ]]; then
 fi
 [[ -n "$FULL_NAME" ]] || FULL_NAME="$FIRST_NAME $LAST_NAME"
 [[ -n "$CLASS_NAME" ]] || CLASS_NAME="${BAKALARI_CLASS:--}"
+if [[ -z "$CLASS_TEACHER" && -n "$TIMETABLE_DATA" ]]; then
+    CLASS_TEACHER="$(printf '%s' "$TIMETABLE_DATA" | jq -r '
+        ([.Teachers[] | {key: (.Id | tostring | gsub("\\s"; "")), name: (.Name // .Abbrev // "")}] | from_entries) as $teachers
+        | [.Days[]?.Atoms[]?.TeacherId? | tostring | gsub("\\s"; "") | $teachers[.] // empty]
+        | map(select(type == "string" and length > 0))
+        | group_by(.)
+        | map({name: .[0], count: length})
+        | sort_by(-.count, .name)
+        | .[0].name // ""
+    ' 2>/dev/null)"
+fi
 [[ -n "$CLASS_TEACHER" ]] || CLASS_TEACHER="-"
 
 read -r ABS_TOTAL ABS_UNSOLVED ABS_EXCUSED <<EOF
@@ -104,8 +135,14 @@ row "Neomluvené / nevyřešené:" "$ABS_UNSOLVED" 196
 printf '\n%s%s=== Průměry podle předmětů ===%s\n' "$C_BOLD" "$(c256 39)" "$C_RESET"
 printf '%s%-28s %-12s%s\n' "$(c256 244)" "Předmět" "Průměr" "$C_RESET"
 printf '%s----------------------------------------%s\n' "$(c256 244)" "$C_RESET"
-printf '%s' "$MARKS_DATA" | jq -r '.Subjects[]? | [(.Subject.Abbrev // .Subject.Name // "?"),(.Subject.Name // .Subject.Abbrev // "?"),(.AverageText // "-")] | @tsv' |
-while IFS=$'\t' read -r abbrev name average; do
-    printf '%s%-28s %-12s%s\n' "$(c256 226)" "$abbrev ($name)" "$average" "$C_RESET"
-done
-printf '%sCelkový průměr předmětů:%s %s%s%s\n' "$(c256 39)" "$C_RESET" "$(c256 226)" "$OVERALL_AVG" "$C_RESET"
+MARKS_COUNT="$(printf '%s' "$MARKS_DATA" | jq -r '.Subjects | length')"
+if [[ "$MARKS_COUNT" -eq 0 ]]; then
+    printf '%s(žádné známky)%s\n' "$(c256 244)" "$C_RESET"
+else
+    printf '%s' "$MARKS_DATA" | jq -r '.Subjects[] | [(.Subject.Abbrev // .Subject.Name // "?"),(.Subject.Name // .Subject.Abbrev // "?"),(.AverageText // "-")] | @tsv' |
+    while IFS=
+\t' read -r abbrev name average; do
+        printf '%s%-28s %-12s%s\n' "$(c256 226)" "$abbrev ($name)" "$average" "$C_RESET"
+    done
+    printf '%sCelkový průměr předmětů:%s %s%s%s\n' "$(c256 39)" "$C_RESET" "$(c256 226)" "$OVERALL_AVG" "$C_RESET"
+fi
