@@ -34,6 +34,8 @@ class = "your_class"
 # class = "your_class"
 
 
+# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
+# cache_dir = "/custom/path/bakalari"
 [colors]
 # Optional ANSI 256-color palette for timetable subjects.
 # If a subject is missing here, rozvrh.sh uses its built-in default color.
