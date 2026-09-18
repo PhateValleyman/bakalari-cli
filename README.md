@@ -6,6 +6,7 @@ Malé shellové nástroje pro práci s API systému Bakaláři z terminálu / Te
 - **`ukoly.sh`** – zkontroluje nesplněné domácí úkoly a (na Androidu v Termuxu) o nich pošle notifikaci přes `termux-notification`.
 - **`znamky.sh`** – zobrazí známky a průměry.
 - **`absence.sh`** – zobrazí souhrn absence a přehled podle předmětů.
+- **`login.sh`** – interaktivně vytvoří nebo upraví profil a ověří přihlášení.
 
 Oba skripty sdílejí stejnou konfiguraci, přihlašovací logiku a barevný výstup přes `lib/common.sh`.
 
@@ -34,7 +35,7 @@ ipkg install jq curl gawk
 ```bash
 git clone https://github.com/PhateValleyman/bakalari-cli.git
 cd bakalari-cli
-chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh
+chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh login.sh
 
 mkdir -p ~/.config/bakalari-cli
 cp config.toml.example ~/.config/bakalari-cli/config.toml
@@ -60,6 +61,9 @@ token      = ""
 name       = "your_name"
 class      = "your_class"
 
+# Volitelná lokální cache rozvrhu.
+# cache_dir = "/custom/path/bakalari"
+
 [colors]
 # Volitelné barvy předmětů v ANSI 256-color paletě (0–255).
 # Pokud položku neuvedeš, použije se vestavěná výchozí barva.
@@ -70,12 +74,18 @@ Prv = 172
 Vv  = 44
 Pč  = 160
 Tv  = 170
-
-[zssumava.bakalari.cz]
-user  = "your_username"
-pass  = "your_password"
-TOKEN = ""                             # doplní se automaticky po přihlášení
 ```
+
+### Interaktivní přihlášení
+
+Novou instalaci nebo další účet lze vytvořit bez ručního editování TOML:
+
+```bash
+./login.sh
+./login.sh --user johnny
+```
+
+Skript vytvoří `~/.config/bakalari-cli/config.toml`, přidá profil do `[general]` jako `userNN`, bezpečně načte heslo bez jeho zobrazení na terminálu, ověří přihlášení proti `/api/login` a uloží získaný `token`. Při použití existujícího profilu se jeho host, uživatelské jméno, heslo, počet hodin a token aktualizují.
 
 ### Barvy předmětů
 
@@ -111,7 +121,7 @@ Přístupový token se po prvním přihlášení uloží zpět do konfigurace a 
 
 `rozvrh.sh` po úspěšném stažení uloží poslední platný JSON rozvrhu lokálně. Pokud zařízení nemá přístup k síti nebo Bakaláři nejsou dostupní, použije se tato cache automaticky.
 
-Výchozí umístění je `~/.cache/bakalari/timetable-<school>.json`. Lze jej přebít proměnnou prostředí `BAKALARI_CACHE_DIR`. Cache obsahuje pouze odpověď rozvrhu, ne heslo ani přístupový token.
+Výchozí umístění je `~/.cache/bakalari/timetable-<user>-<school>.json`. Lze jej přebít proměnnou prostředí `BAKALARI_CACHE_DIR`. Cache obsahuje pouze odpověď rozvrhu, ne heslo ani přístupový token.
 
 
 ### Exit statusy
