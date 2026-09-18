@@ -57,6 +57,45 @@ UKOLY_OUTPUT="$TMP_DIR/ukoly.out"
 ZNAMKY_OUTPUT="$TMP_DIR/znamky.out"
 ABSENCE_OUTPUT="$TMP_DIR/absence.out"
 
+LOGIN_INPUT=
+"$ROOT_DIR/rozvrh.sh" --user mock >"$ROZVRH_OUTPUT"
+
+grep -Fq 'token = "test-token"' "$CONFIG"
+grep -Fq $'\033[48;5;226m' "$ROZVRH_OUTPUT"
+grep -Fq $'\033[48;5;135m' "$ROZVRH_OUTPUT"
+
+"$ROOT_DIR/ukoly.sh" --user mock >"$UKOLY_OUTPUT"
+grep -Fq "Smoke test" "$UKOLY_OUTPUT"
+
+"$ROOT_DIR/znamky.sh" --user mock >"$ZNAMKY_OUTPUT"
+grep -Fq "Smoke" "$ZNAMKY_OUTPUT"
+grep -Fq "1,50" "$ZNAMKY_OUTPUT"
+
+"$ROOT_DIR/absence.sh" --user mock >"$ABSENCE_OUTPUT"
+grep -Fq "zameškáno=1" "$ABSENCE_OUTPUT"
+grep -Fq "Matematika" "$ABSENCE_OUTPUT"
+
+# Verify the timetable remains available after the API goes offline.
+kill "$SERVER_PID"
+wait "$SERVER_PID" 2>/dev/null || true
+SERVER_PID=""
+
+"$ROOT_DIR/rozvrh.sh" --user mock >"$TMP_DIR/rozvrh-offline.out" 2>"$TMP_DIR/rozvrh-offline.err"
+grep -Fq "08:00" "$TMP_DIR/rozvrh-offline.out"
+grep -Fq "používám uložený rozvrh" "$TMP_DIR/rozvrh-offline.err"
+
+
+printf 'OK: rozvrh.sh smoke test\n'
+printf 'OK: ukoly.sh smoke test\n'
+printf 'OK: znamky.sh smoke test\n'
+printf 'OK: absence.sh smoke test\n'
+printf 'OK: login.sh smoke test\n'
+login-test-school\ntest-user\ntest-pass\n2\n'
+printf "%s" "$LOGIN_INPUT" | "$ROOT_DIR/login.sh" --user login-test >"$TMP_DIR/login.out"
+grep -Fq 'user02 = "login-test"' "$CONFIG"
+grep -Fq '[login-test]' "$CONFIG"
+grep -Fq 'token = "test-token"' "$CONFIG"
+
 "$ROOT_DIR/rozvrh.sh" --user mock >"$ROZVRH_OUTPUT"
 
 grep -Fq 'token = "test-token"' "$CONFIG"
