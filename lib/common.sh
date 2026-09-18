@@ -46,7 +46,12 @@ if [[ -z "${BAKALARI_CONFIG:-}" ]]; then
 fi
 
 # Local cache directory for data that should remain available offline.
-BAKALARI_CACHE_DIR="${BAKALARI_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/bakalari}"
+if [[ -n "${BAKALARI_CACHE_DIR:-}" ]]; then
+    BAKALARI_CACHE_DIR_FROM_ENV=1
+else
+    BAKALARI_CACHE_DIR_FROM_ENV=0
+    BAKALARI_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/bakalari"
+fi
 
 cache_file() {
     local name="$1" safe
@@ -155,15 +160,26 @@ save_token() {
     local rsection="${section//./\\.}"
     tmp="$(mktemp)" || return 1
     awk -v section="$rsection" -v token="$token" '
-        $0 ~ "^\\[" section "\\][[:space:]]*$" { insec=1; print; next }
-        /^\[/ { insec=0 }
-        insec && /^[[:space:]]*token[[:space:]]*=/ {
-            print "token = \"" token "\""
+        $0 ~ "^\\[" section "\\][[:space:]]*$" {
+            insec=1
             found=1
+            print
             next
         }
+        insec && /^[[:space:]]*token[[:space:]]*=/ {
+            print "token = \"" token "\""
+            token_found=1
+            next
+        }
+        /^\[/ {
+            if (insec && !token_found) print "token = \"" token "\""
+            insec=0
+        }
         { print }
-        END { if (!found) exit 2 }
+        END {
+            if (insec && !token_found) print "token = \"" token "\""
+            if (!found) exit 2
+        }
     ' "$BAKALARI_CONFIG" > "$tmp" || { rm -f "$tmp"; return 1; }
     mv "$tmp" "$BAKALARI_CONFIG"
 }

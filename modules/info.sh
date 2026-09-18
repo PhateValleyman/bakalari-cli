@@ -60,7 +60,7 @@ CONFIG_CACHE_DIR="$(config_value general cache_dir)"
 if [[ -z "$CONFIG_CACHE_DIR" ]]; then
     CONFIG_CACHE_DIR="$(config_value "$BAKALARI_USER" cache_dir)"
 fi
-if [[ -n "$CONFIG_CACHE_DIR" && -z "${BAKALARI_CACHE_DIR:-}" ]]; then
+if [[ -n "$CONFIG_CACHE_DIR" && "${BAKALARI_CACHE_DIR_FROM_ENV:-0}" -eq 0 ]]; then
     BAKALARI_CACHE_DIR="$CONFIG_CACHE_DIR"
 fi
 

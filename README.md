@@ -40,7 +40,7 @@ ipkg install jq curl gawk
 ```bash
 git clone https://github.com/PhateValleyman/bakalari-cli.git
 cd bakalari-cli
-chmod +x bakalari-cli rozvrh.sh ukoly.sh znamky.sh absence.sh info.sh login.sh
+chmod +x bakalari-cli modules/*.sh
 
 mkdir -p ~/.config/bakalari-cli
 cp config.toml.example ~/.config/bakalari-cli/config.toml
@@ -190,7 +190,7 @@ GitLab CI spouští `shellcheck`, kontrolu syntaxe a stejné smoke testy.
 bakalari-cli/
 ├── bakalari-cli          # hlavní CLI dispatcher
 ├── modules/              # jednotlivé CLI moduly
-│   ├── lib/
+├── lib/
 │   └── common.sh          # sdílená konfigurace, login, barvy, logování
 ├── config.toml.example
 ├── docs/
