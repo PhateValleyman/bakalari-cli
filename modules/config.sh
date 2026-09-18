@@ -85,9 +85,10 @@ color_swatch() {
 }
 
 render_color_picker() {
-    local values_name="$1" labels_name="$2" selected="$3" color_index="$4"
+    local values_name="$1" labels_name="$2" data_name="$3" selected="$4" color_index="$5"
     local -n values_ref="$values_name"
     local -n labels_ref="$labels_name"
+    local -n data_ref="$data_name"
     local i field value marker palette_marker
     printf '\033[2J\033[H'
     printf '%s%-24s %-8s %-12s    %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Náhled" \
@@ -95,7 +96,7 @@ render_color_picker() {
     printf '%s\n' '--------------------------------------------------------------------------------'
     for i in "${!labels_ref[@]}"; do
         field="${values_ref[i]}"
-        value="${values_ref[$field]:-}"
+        value="${data_ref[$field]:-}"
         [[ "$field" == "pass" ]] && value="********"
         [[ -n "$value" ]] || value="-"
         marker=" "
@@ -120,7 +121,7 @@ render_color_picker() {
 }
 
 select_color_value() {
-    local current="$1" values_name="$2" labels_name="$3" selected="$4"
+    local current="$1" values_name="$2" labels_name="$3" data_name="$4" selected="$5"
     local i index=0 key old_stty
     if ! [[ -t 0 && -t 2 ]]; then
         input_value "Barva (0-255)" "$current"
@@ -132,7 +133,7 @@ select_color_value() {
     old_stty="$(stty -g)" || return 1
     stty -echo -icanon min 1 time 0 || return 1
     while :; do
-        render_color_picker "$values_name" "$labels_name" "$selected" "$index" >&2
+        render_color_picker "$values_name" "$labels_name" "$data_name" "$selected" "$index" >&2
         IFS= read -r -s -n1 key
         if [[ "$key" == $'\e' ]]; then
             IFS= read -r -s -n2 key
@@ -222,7 +223,7 @@ edit_global() {
                     selected="$i"
                     field="${global_fields[i]}"
                     if [[ "$field" == color_* ]]; then
-                        new_value="$(select_color_value "${global_values[$field]:-}" global_fields global_labels "$i")"
+                        new_value="$(select_color_value "${global_values[$field]:-}" global_fields global_labels global_values "$i")"
                     else
                         new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
                     fi
@@ -254,7 +255,7 @@ edit_global() {
                 selected="$i"
                 field="${global_fields[i]}"
                 if [[ "$field" == color_* ]]; then
-                    new_value="$(select_color_value "${global_values[$field]:-}" global_fields global_labels "$i")"
+                    new_value="$(select_color_value "${global_values[$field]:-}" global_fields global_labels global_values "$i")"
                 else
                     new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
                 fi
@@ -366,7 +367,7 @@ edit_field() {
     field="${FIELDS[index]}"
     value="${VALUES[$field]:-}"
     if [[ "$field" == color_* ]]; then
-        new_value="$(select_color_value "$value" FIELDS LABELS "$index")" || return 0
+        new_value="$(select_color_value "$value" FIELDS LABELS VALUES "$index")" || return 0
         [[ -z "$new_value" || "$new_value" =~ ^[0-9]+$ ]] &&
             { [[ -z "$new_value" || "$new_value" -le 255 ]] || return 1; } ||
             return 1
