@@ -77,9 +77,7 @@ fetch_homeworks() {
 
 # Zkus nejdřív uložený TOKEN; pokud chybí nebo je neplatný, přihlas se znovu.
 if [[ -z "$TOKEN" ]] || ! RESPONSE="$(fetch_homeworks 2>/dev/null)"; then
-    if ! TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")"; then
-        exit 1
-    fi
+    TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")" || exit "$?"
     save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
     if ! RESPONSE="$(fetch_homeworks)"; then
         log_error "Požadavek na úkoly selhal i po přihlášení."
