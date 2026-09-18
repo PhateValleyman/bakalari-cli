@@ -103,12 +103,8 @@ func (c *Client) FetchTimetable() (*TimetableResponse, error) {
 	err := c.get("/api/3/timetable/actual", &result)
 	if err == nil {
 		c.saveCache("timetable", &result)
-		return &result, nil
 	}
-	if c.loadCache("timetable", &result) == nil {
-		return &result, nil
-	}
-	return nil, err
+	return &result, err
 }
 
 // FetchHomeworks retrieves the homework assignments.
