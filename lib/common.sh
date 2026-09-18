@@ -20,6 +20,7 @@ log_info()  { printf '%sINFO:%s  %s\n' "$C_BLUE"   "$C_RESET" "$*" >&2; }
 log_warn()  { printf '%sWARN:%s  %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_error() { printf '%sERROR:%s %s\n' "$C_RED"    "$C_RESET" "$*" >&2; }
 log_ok()    { printf '%sOK:%s    %s\n' "$C_GREEN"  "$C_RESET" "$*" >&2; }
+c256()      { printf '\033[38;5;%sm' "$1"; }
 
 require_cmd() {
     local missing=() c
@@ -131,6 +132,7 @@ config_value() {
         insec && $1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
             value=$0
             sub(/^[^=]*=[[:space:]]*/, "", value)
+            gsub(/^[[:space:]]*#[^"]*$/, "", value) # remove trailing comments outside quotes
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
             gsub(/^"|"$/, "", value)
             print value
@@ -151,10 +153,14 @@ resolve_user() {
                     key=$1
                     gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
                     sub(/^user/, "", key)
-                    if (key ~ /^[0-9]+$/) printf "%010d\t%s\n", key, $2
+                    if (key ~ /^[0-9]+$/) {
+                        val=$2
+                        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+                        gsub(/^"|"$/, "", val)
+                        printf "%010d\t%s\n", key, val
+                    }
                 }
-            ' "$BAKALARI_CONFIG" | sort -n | head -n 1 | cut -f2- |
-            sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//'
+            ' "$BAKALARI_CONFIG" | sort -n | head -n 1 | cut -f2-
         )"
     fi
     if [[ -z "$BAKALARI_USER" ]]; then
@@ -231,13 +237,30 @@ subject_color() {
 # Return the configured timetable color as an associative array entry.
 load_subject_colors() {
     declare -gA SUBJECT_COLORS=()
-    SUBJECT_COLORS[Hv]="$(subject_color Hv 135)"
-    SUBJECT_COLORS[M]="$(subject_color M 33)"
-    SUBJECT_COLORS[Čj]="$(subject_color Čj 34)"
-    SUBJECT_COLORS[Prv]="$(subject_color Prv 172)"
-    SUBJECT_COLORS[Vv]="$(subject_color Vv 44)"
-    SUBJECT_COLORS[Pč]="$(subject_color Pč 160)"
-    SUBJECT_COLORS[Tv]="$(subject_color Tv 170)"
+    local subjects subjects_raw
+    subjects_raw="$(
+        awk '
+            /^\[colors\]/ { insec=1; next }
+            /^\[/ { insec=0 }
+            insec && /^[[:space:]]*[^=]+[[:space:]]*=[[:space:]]*[0-9]+/ {
+                sub(/^[[:space:]]*/, "")
+                sub(/[[:space:]]*=.*/, "")
+                print
+            }
+        ' "$BAKALARI_CONFIG"
+    )"
+    while read -r s; do
+        [[ -n "$s" ]] && SUBJECT_COLORS["$s"]="$(subject_color "$s" 226)"
+    done <<< "$subjects_raw"
+
+    # Built-in defaults for common subjects if not in config
+    [[ -n "${SUBJECT_COLORS[Hv]:-}" ]] || SUBJECT_COLORS[Hv]=135
+    [[ -n "${SUBJECT_COLORS[M]:-}" ]]  || SUBJECT_COLORS[M]=33
+    [[ -n "${SUBJECT_COLORS[Čj]:-}" ]] || SUBJECT_COLORS[Čj]=34
+    [[ -n "${SUBJECT_COLORS[Prv]:-}" ]] || SUBJECT_COLORS[Prv]=172
+    [[ -n "${SUBJECT_COLORS[Vv]:-}" ]] || SUBJECT_COLORS[Vv]=44
+    [[ -n "${SUBJECT_COLORS[Pč]:-}" ]] || SUBJECT_COLORS[Pč]=160
+    [[ -n "${SUBJECT_COLORS[Tv]:-}" ]] || SUBJECT_COLORS[Tv]=170
 }
 usage_header() {
     printf '%s%sBakaláři CLI%s\n' "$C_BOLD" "$C_BLUE" "$C_RESET"

@@ -96,10 +96,6 @@ DAILY_TOTALS="$(printf '%s' "$DATA" | jq -r '
     [.Absences[]?
       | {
           date: (.Date[0:10] // "?"),
-          day: (
-              ((.Date[0:10] // "0000-00-00") | strptime("%Y-%m-%d") | .[6])
-              // -1
-          ),
           ok: (.Ok // 0),
           missed: (.Missed // 0),
           late: (.Late // 0),
@@ -107,7 +103,7 @@ DAILY_TOTALS="$(printf '%s' "$DATA" | jq -r '
           unsolved: (.Unsolved // 0)
         }
       | .hours = (.ok + .missed + .late + .soon)
-      | [.date, .day, .hours, .missed, .late, .soon, .unsolved]
+      | [.date, .hours, .missed, .late, .soon, .unsolved]
       | @tsv
     ] | .[]
 ' 2>/dev/null || true)"
@@ -115,18 +111,24 @@ DAILY_TOTALS="$(printf '%s' "$DATA" | jq -r '
 if [[ -n "$DAILY_TOTALS" ]]; then
     printf '%s\n' "$DAILY_TOTALS" |
         sort -k1,1 |
-        while IFS=$'\t' read -r date day hours missed late soon unsolved; do
-            # jq strptime("%Y-%m-%d") uses Sunday=0 ... Saturday=6.
-            case "$day" in
-                0) day_name="Ne" ;;
-                1) day_name="Po" ;;
-                2) day_name="Út" ;;
-                3) day_name="St" ;;
-                4) day_name="Čt" ;;
-                5) day_name="Pá" ;;
-                6) day_name="So" ;;
-                *) day_name="?" ;;
-            esac
+        while IFS=$'\t' read -r date hours missed late soon unsolved; do
+            # Fallback for day name if jq strptime is not available or buggy
+            day_name="?"
+            if [[ "$date" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})$ ]]; then
+                # Use portable-ish way to get day name if possible, or just skip it
+                # For now, let bash try to get it if "date" command is GNU
+                if day_num=$(date -d "$date" +%w 2>/dev/null); then
+                    case "$day_num" in
+                        0) day_name="Ne" ;;
+                        1) day_name="Po" ;;
+                        2) day_name="Út" ;;
+                        3) day_name="St" ;;
+                        4) day_name="Čt" ;;
+                        5) day_name="Pá" ;;
+                        6) day_name="So" ;;
+                    esac
+                fi
+            fi
 
             if [[ "$missed" -gt 0 || "$unsolved" -gt 0 ]]; then
                 row_color="$C_RESET"

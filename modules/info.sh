@@ -81,7 +81,10 @@ cache_stamp_load() {
 cache_stamp_text() {
     local ts="$1"
     [[ "$ts" =~ ^[0-9]+$ ]] || return 1
-    date -d "@$ts" '+%d.%m.%Y %H:%M:%S'
+    # Try GNU date, then BSD/macOS date
+    date -d "@$ts" '+%d.%m.%Y %H:%M:%S' 2>/dev/null || \
+    date -r "$ts" '+%d.%m.%Y %H:%M:%S' 2>/dev/null || \
+    printf '%s' "$ts"
 }
 
 load_data() {
@@ -135,7 +138,7 @@ for cache_name in "$USER_CACHE" "$ABSENCE_CACHE" "$MARKS_CACHE" "$TIMETABLE_CACH
         LATEST_STAMP="$stamp"
     fi
 done
-c256() { printf '\033[38;5;%sm' "$1"; }
+
 row() {
     local label="$1" value="$2" color="$3" width=25 pad
     pad=$((width - ${#label}))
