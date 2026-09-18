@@ -53,6 +53,7 @@ PASSWORD="$BAKALARI_PASS"
 TOKEN="$BAKALARI_TOKEN"
 API_BASE_URL="${BAKALARI_BASE_URL:-https://$SCHOOL}"
 LOGIN_URL="$API_BASE_URL/api/login"
+ABSENCE_URL="$API_BASE_URL/api/3/absence/student"
 fetch_absence() { fetch_json "$ABSENCE_URL" "$TOKEN"; }
 
 if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_absence 2>/dev/null)"; then
