@@ -1,8 +1,11 @@
 # Configuration for bakalari-cli.
 #
-# Copy this file to ~/.config/bakalari/config.toml (or to the path
+# Copy this file to ~/.config/bakalari-cli/config.toml (or to the path
 # configured by BAKALARI_CONFIG) and fill in your own credentials.
 # This file is tracked only as an example; the real config is ignored.
+#
+# If ~/.bakalariclirc exists, it is used instead of the main config.
+# BAKALARI_CONFIG can explicitly override both locations.
 
 [general]
 # Bakalari hostname without "https://".
