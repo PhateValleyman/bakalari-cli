@@ -85,66 +85,59 @@ color_swatch() {
 }
 
 render_color_picker() {
-    local values_name="$1" labels_name="$2" data_name="$3" selected="$4" color_index="$5"
-    local -n values_ref="$values_name"
-    local -n labels_ref="$labels_name"
-    local -n data_ref="$data_name"
-    local i field value marker palette_marker palette_index row_count
-    printf '\033[2J\033[H'
-    printf '%s%-32s %-18s %-12s    %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Náhled" \
-        "Vyber barvu (↑/↓, Enter, Esc)" "$C_RESET"
-    printf '%s\n' '------------------------------------------------------------------------------------------'
-    row_count="${#labels_ref[@]}"
-    (( ${#COLOR_NAMES[@]} + selected > row_count )) &&
-        row_count=$(( ${#COLOR_NAMES[@]} + selected ))
-    for ((i=0; i<row_count; i++)); do
-        if (( i < ${#labels_ref[@]} )); then
-            field="${values_ref[i]}"
-            value="${data_ref[$field]:-}"
-            [[ "$field" == "pass" ]] && value="********"
-            [[ -n "$value" ]] || value="-"
-            marker=" "
-            [[ "$i" == "$selected" ]] && marker=">"
-            printf '%s %-26s %-18s %b' "$marker" "${labels_ref[i]}" "$value" \
-                "$(color_preview "$value")"
-        else
-            printf '%-54s' ''
-        fi
-        palette_index=$((i - selected))
-        if (( palette_index >= 0 && palette_index < ${#COLOR_NAMES[@]} )); then
-            palette_marker=" "
-            (( palette_index == color_index )) && palette_marker=">"
-            color_swatch "${COLOR_VALUES[palette_index]}" \
-                "${COLOR_NAMES[palette_index]}" "$palette_marker"
-        fi
-        printf '\n'
+    local current="$1" selected="$2" index="$3"
+    local i row col marker name value
+
+    printf '\\033[2J\\033[H'
+    printf '%s%s%s\\n' "$C_BOLD" "Výběr barvy předmětu" "$C_RESET"
+    printf '%sAktuální: %s%b  (↑/↓/←/→, Enter, Esc)%s\\n\\n' "$C_GRAY" "$current" "$(color_preview "$current")" "$C_RESET"
+
+    for ((row=0; row<4; row++)); do
+        for ((col=0; col<4; col++)); do
+            i=$((row * 4 + col))
+            marker=' '
+            (( i == index )) && marker='>'
+            value="${COLOR_VALUES[i]}"
+            name="${COLOR_NAMES[i]}"
+            printf '%s %2d %b%-20s%b' "$marker" "$value" "$(color_text "$value")" "$name" "$C_RESET"
+            (( col < 3 )) && printf '  '
+        done
+        printf '\\n'
     done
-    printf '\n%sEsc%s zrušit   %sEnter%s potvrdit\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
+
+    printf '\\n%sEnter%s potvrdit   %sEsc%s zrušit\\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
 }
 
 select_color_value() {
-    local current="$1" values_name="$2" labels_name="$3" data_name="$4" selected="$5"
-    local i index=0 key old_stty
+    local current="$1" selected="$2"
+    local index=0 key old_stty
+
     if ! [[ -t 0 && -t 2 ]]; then
         input_value "Barva (0-255)" "$current"
         return
     fi
+
     for i in "${!COLOR_VALUES[@]}"; do
         [[ "${COLOR_VALUES[i]}" == "$current" ]] && index="$i"
     done
+
     old_stty="$(stty -g)" || return 1
     stty -echo -icanon min 1 time 0 || return 1
+
     while :; do
-        render_color_picker "$values_name" "$labels_name" "$data_name" "$selected" "$index" >&2
+        render_color_picker "$current" "$selected" "$index" >&2
         IFS= read -r -s -n1 key
-        if [[ "$key" == $'\e' ]]; then
+
+        if [[ "$key" == $'\\e' ]]; then
             IFS= read -r -s -n2 key
             case "$key" in
-                '[A') if (( index > 0 )); then ((index--)); fi ;;
-                '[B') if (( index < ${#COLOR_VALUES[@]} - 1 )); then ((index++)); fi ;;
+                '[A') (( index >= 4 )) && ((index -= 4)) ;;
+                '[B') (( index < 12 )) && ((index += 4)) ;;
+                '[C') (( index % 4 < 3 )) && ((index++)) ;;
+                '[D') (( index % 4 > 0 )) && ((index--)) ;;
                 '') stty "$old_stty"; return 1 ;;
             esac
-        elif [[ "$key" == $'\n' || "$key" == $'\r' ]]; then
+        elif [[ "$key" == $'\\n' || "$key" == $'\\r' ]]; then
             stty "$old_stty"
             printf '%s' "${COLOR_VALUES[index]}"
             return 0
