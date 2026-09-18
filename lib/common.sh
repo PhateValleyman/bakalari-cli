@@ -193,6 +193,10 @@ usage_header() {
     printf '%s%sBakaláři CLI%s\n' "$C_BOLD" "$C_BLUE" "$C_RESET"
 }
 
+usage_module_header() {
+    printf '%s%s%s%s\n' "$C_BOLD" "$C_BLUE" "$1" "$C_RESET"
+}
+
 usage_section() {
     printf '%s%s%s%s\n' "$C_BOLD" "$C_YELLOW" "$1" "$C_RESET"
 }
