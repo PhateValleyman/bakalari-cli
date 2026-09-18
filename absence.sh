@@ -98,7 +98,7 @@ DAILY_TOTALS="$(printf '%s' "$DATA" | jq -r '
 
 if [[ -n "$DAILY_TOTALS" ]]; then
     printf '%s\n' "$DAILY_TOTALS" |
-        sort -r -k1,1 |
+        sort -k1,1 |
         while IFS=$'\t' read -r date day hours missed late soon unsolved; do
             # jq strptime("%Y-%m-%d") uses Sunday=0 ... Saturday=6.
             case "$day" in
@@ -118,8 +118,13 @@ if [[ -n "$DAILY_TOTALS" ]]; then
                 row_color="$C_GRAY"
             fi
 
+            display_date="$date"
+            if [[ "$date" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})$ ]]; then
+                display_date="${BASH_REMATCH[3]}.${BASH_REMATCH[2]}.${BASH_REMATCH[1]}"
+            fi
+
             printf '%s%-12s %-8s %7s %9s %7s %7s %12s%s\n' \
-                "$row_color" "$date" "$day_name" "$hours" "$missed" "$late" "$soon" "$unsolved" "$C_RESET"
+                "$row_color" "$display_date" "$day_name" "$hours" "$missed" "$late" "$soon" "$unsolved" "$C_RESET"
         done
 else
     printf '%s%-12s%s\n' "$C_GRAY" "(žádná data)" "$C_RESET"
