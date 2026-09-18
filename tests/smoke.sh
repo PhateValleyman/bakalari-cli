@@ -48,23 +48,24 @@ export BAKALARI_CONFIG="$CONFIG"
 export BAKALARI_BASE_URL="http://127.0.0.1:$PORT"
 export BAKALARI_CACHE_DIR="$TMP_DIR/cache"
 
-"$ROOT_DIR/rozvrh.sh" --user mock >"$TMP_DIR/rozvrh.out"
+"$ROOT_DIR/bakalari-cli" rozvrh --user mock >"$TMP_DIR/rozvrh.out"
 grep -Fq 'token = "test-token"' "$CONFIG"
 grep -Fq $'\033[48;5;226m' "$TMP_DIR/rozvrh.out"
 grep -Fq $'\033[48;5;135m' "$TMP_DIR/rozvrh.out"
 
-"$ROOT_DIR/ukoly.sh" --user mock >"$TMP_DIR/ukoly.out"
+"$ROOT_DIR/bakalari-cli" ukoly --user mock >"$TMP_DIR/ukoly.out"
 grep -Fq "Smoke test" "$TMP_DIR/ukoly.out"
 
-"$ROOT_DIR/znamky.sh" --user mock >"$TMP_DIR/znamky.out"
+"$ROOT_DIR/bakalari-cli" znamky --user mock >"$TMP_DIR/znamky.out"
 grep -Fq "Smoke" "$TMP_DIR/znamky.out"
 grep -Fq "1,50" "$TMP_DIR/znamky.out"
 
-"$ROOT_DIR/absence.sh" --user mock >"$TMP_DIR/absence.out"
-grep -Fq "zameškáno=1" "$TMP_DIR/absence.out"
-grep -Fq "Matematika" "$TMP_DIR/absence.out"
+"$ROOT_DIR/bakalari-cli" absence --user mock >"$TMP_DIR/absence.out"
+grep -Fq "01.01.2099" "$TMP_DIR/absence.out"
+grep -Fq "Zameškáno" "$TMP_DIR/absence.out"
+grep -Fq "CELKEM" "$TMP_DIR/absence.out"
 
-"$ROOT_DIR/info.sh" --user mock >"$TMP_DIR/info.out"
+"$ROOT_DIR/bakalari-cli" info --user mock >"$TMP_DIR/info.out"
 grep -Fq "Test" "$TMP_DIR/info.out"
 grep -Fq "Student" "$TMP_DIR/info.out"
 grep -Fq "8.A" "$TMP_DIR/info.out"
@@ -76,7 +77,7 @@ grep -Fq "Matematika" "$TMP_DIR/info.out"
 grep -Fq "1,50" "$TMP_DIR/info.out"
 
 LOGIN_INPUT=$'login-test-school\ntest-user\ntest-pass\n2\n'
-printf "%s" "$LOGIN_INPUT" | "$ROOT_DIR/login.sh" --user login-test >"$TMP_DIR/login.out"
+printf "%s" "$LOGIN_INPUT" | "$ROOT_DIR/bakalari-cli" login --user login-test >"$TMP_DIR/login.out"
 grep -Fq 'user02 = "login-test"' "$CONFIG"
 grep -Fq '[login-test]' "$CONFIG"
 grep -Fq 'token = "test-token"' "$CONFIG"
@@ -85,7 +86,7 @@ kill "$SERVER_PID"
 wait "$SERVER_PID" 2>/dev/null || true
 SERVER_PID=""
 
-"$ROOT_DIR/rozvrh.sh" --user mock >"$TMP_DIR/rozvrh-offline.out" 2>"$TMP_DIR/rozvrh-offline.err"
+"$ROOT_DIR/bakalari-cli" rozvrh --user mock >"$TMP_DIR/rozvrh-offline.out" 2>"$TMP_DIR/rozvrh-offline.err"
 grep -Fq "08:00" "$TMP_DIR/rozvrh-offline.out"
 grep -Fq "používám uložený rozvrh" "$TMP_DIR/rozvrh-offline.err"
 
@@ -95,3 +96,7 @@ printf 'OK: znamky.sh smoke test\n'
 printf 'OK: absence.sh smoke test\n'
 printf 'OK: info.sh smoke test\n'
 printf 'OK: login.sh smoke test\n'
+
+"$ROOT_DIR/bakalari-cli" --help >"$TMP_DIR/cli-help.out"
+grep -Fq "Bakaláři CLI" "$TMP_DIR/cli-help.out"
+grep -Fq "absence" "$TMP_DIR/cli-help.out"
