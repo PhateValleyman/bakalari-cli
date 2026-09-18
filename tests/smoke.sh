@@ -90,12 +90,30 @@ SERVER_PID=""
 grep -Fq "08:00" "$TMP_DIR/rozvrh-offline.out"
 grep -Fq "používám uložený rozvrh" "$TMP_DIR/rozvrh-offline.err"
 
+"$ROOT_DIR/bakalari-cli" ukoly --user mock >"$TMP_DIR/ukoly-offline.out" 2>"$TMP_DIR/ukoly-offline.err"
+grep -Fq "Smoke test" "$TMP_DIR/ukoly-offline.out"
+grep -Fq "cache" "$TMP_DIR/ukoly-offline.err"
+
+"$ROOT_DIR/bakalari-cli" znamky --user mock >"$TMP_DIR/znamky-offline.out" 2>"$TMP_DIR/znamky-offline.err"
+grep -Fq "Smoke" "$TMP_DIR/znamky-offline.out"
+grep -Fq "cache" "$TMP_DIR/znamky-offline.err"
+
+"$ROOT_DIR/bakalari-cli" absence --user mock >"$TMP_DIR/absence-offline.out" 2>"$TMP_DIR/absence-offline.err"
+grep -Fq "01.01.2099" "$TMP_DIR/absence-offline.out"
+grep -Fq "cache" "$TMP_DIR/absence-offline.err"
+
+"$ROOT_DIR/bakalari-cli" info --user mock >"$TMP_DIR/info-offline.out" 2>"$TMP_DIR/info-offline.err"
+grep -Fq "Test" "$TMP_DIR/info-offline.out"
+grep -Fq "Student" "$TMP_DIR/info-offline.out"
+grep -Fq "CACHE" "$TMP_DIR/info-offline.out"
+
 printf 'OK: rozvrh.sh smoke test\n'
 printf 'OK: ukoly.sh smoke test\n'
 printf 'OK: znamky.sh smoke test\n'
 printf 'OK: absence.sh smoke test\n'
 printf 'OK: info.sh smoke test\n'
 printf 'OK: login.sh smoke test\n'
+printf 'OK: offline cache smoke test\n'
 
 "$ROOT_DIR/bakalari-cli" --help >"$TMP_DIR/cli-help.out"
 grep -Fq "Bakaláři CLI" "$TMP_DIR/cli-help.out"

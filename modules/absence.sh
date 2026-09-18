@@ -61,12 +61,20 @@ TOKEN="$BAKALARI_TOKEN"
 API_BASE_URL="${BAKALARI_BASE_URL:-https://$SCHOOL}"
 LOGIN_URL="$API_BASE_URL/api/login"
 ABSENCE_URL="$API_BASE_URL/api/3/absence/student"
+ABSENCE_CACHE="absence-$BAKALARI_USER-$SCHOOL.json"
 fetch_absence() { fetch_json "$ABSENCE_URL" "$TOKEN"; }
 
-if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_absence 2>/dev/null)"; then
-    if ! TOKEN="$(bakalari_login "$BAKALARI_USER" "$LOGIN_URL" "$USERNAME" "$PASSWORD")"; then exit 1; fi
-    save_token "$BAKALARI_USER" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
-    if ! DATA="$(fetch_absence)"; then
+if [[ -n "$TOKEN" ]] && DATA="$(fetch_cached_json "$ABSENCE_CACHE" "$ABSENCE_URL" "$TOKEN" 'type == "object" and (.Absences | type == "array")')"; then
+    :
+else
+    if ! TOKEN="$(bakalari_login "$BAKALARI_USER" "$LOGIN_URL" "$USERNAME" "$PASSWORD")"; then
+        DATA="$(cache_load_valid "$ABSENCE_CACHE" 'type == "object" and (.Absences | type == "array")')" || exit "$EXIT_NETWORK"
+        log_warn "Používám uloženou cache absence."
+    fi
+    if [[ -n "$TOKEN" ]]; then
+        save_token "$BAKALARI_USER" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
+    fi
+    if [[ -z "${DATA:-}" ]] && ! DATA="$(fetch_cached_json "$ABSENCE_CACHE" "$ABSENCE_URL" "$TOKEN" 'type == "object" and (.Absences | type == "array")')"; then
         log_error "Požadavek na absenci selhal i po přihlášení."
         exit "$EXIT_NETWORK"
     fi

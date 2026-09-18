@@ -122,11 +122,11 @@ Neznámý předmět, který nemá vlastní konfiguraci ani vestavěnou barvu, po
 
 Přístupový token se po prvním přihlášení uloží zpět do konfigurace a při dalších spuštěních se skripty nejdřív pokusí použít jej — teprve když je neplatný nebo chybí, proběhne nové přihlášení k Bakalářům.
 
-### Offline cache rozvrhu
+### Offline cache
 
-`rozvrh.sh` po úspěšném stažení uloží poslední platný JSON rozvrhu lokálně. Pokud zařízení nemá přístup k síti nebo Bakaláři nejsou dostupní, použije se tato cache automaticky.
+Moduly `rozvrh`, `ukoly`, `znamky`, `absence` a `info` po úspěšném stažení uloží poslední platné JSON odpovědi lokálně. Pokud zařízení nemá přístup k síti nebo Bakaláři nejsou dostupní, použije se odpovídající cache automaticky.
 
-Výchozí umístění je `~/.cache/bakalari/timetable-<user>-<school>.json`. Lze jej přebít proměnnou prostředí `BAKALARI_CACHE_DIR`. Cache obsahuje pouze odpověď rozvrhu, ne heslo ani přístupový token.
+Výchozí umístění je `~/.cache/bakalari/`. Lze jej přebít proměnnou prostředí `BAKALARI_CACHE_DIR` nebo položkou `cache_dir` v konfiguraci. Cache obsahuje pouze odpovědi API, ne heslo ani přístupový token. Každý modul nejprve zkusí platný token, poté nové přihlášení a nakonec validovanou lokální cache.
 
 
 ### Exit statusy

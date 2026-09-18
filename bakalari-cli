@@ -41,8 +41,6 @@ show_home() {
     usage
     printf '\n'
     if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
-        # shellcheck source=lib/common.sh
-        source "$SCRIPT_DIR/lib/common.sh"
         if require_config >/dev/null 2>&1 && resolve_user "" >/dev/null 2>&1; then
             printf 'Aktuální uživatel:\n'
             printf '  Profil: %s\n' "$BAKALARI_USER"

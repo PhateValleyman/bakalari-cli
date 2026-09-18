@@ -49,13 +49,6 @@ login_again() {
     save_token "$BAKALARI_USER" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
 }
 
-if [[ -z "$TOKEN" ]]; then login_again || exit "$EXIT_NETWORK"; fi
-if ! USER_DATA="$(fetch_json "$USER_URL" "$TOKEN" 2>/dev/null)"; then
-    login_again || exit "$EXIT_NETWORK"
-    USER_DATA="$(fetch_json "$USER_URL" "$TOKEN")" || { log_error "Požadavek na informace o uživateli selhal."; exit "$EXIT_NETWORK"; }
-fi
-printf '%s' "$USER_DATA" | jq -e 'type == "object"' >/dev/null 2>&1 || { log_error "Neplatná odpověď pro informace o uživateli."; exit "$EXIT_DATA"; }
-
 CONFIG_CACHE_DIR="$(config_value general cache_dir)"
 if [[ -z "$CONFIG_CACHE_DIR" ]]; then
     CONFIG_CACHE_DIR="$(config_value "$BAKALARI_USER" cache_dir)"
@@ -92,34 +85,47 @@ cache_stamp_text() {
 }
 
 load_data() {
-    local cache_name="$1" url="$2" validator="$3" required="$4"
+    local target="$1" cache_name="$2" url="$3" validator="$4" required="$5"
     local data=""
+    if [[ -z "$TOKEN" ]]; then
+        login_again || true
+    fi
     if data="$(fetch_json "$url" "$TOKEN" 2>/dev/null)" &&
        printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1; then
         cache_save "$cache_name" "$data" || log_warn "Nepodařilo se uložit cache $cache_name."
         cache_stamp_save "$cache_name" || true
-        printf '%s' "$data"
+        printf -v "$target" '%s' "$data"
         return 0
+    fi
+    if [[ "${AUTH_RETRIED:-0}" -eq 0 ]] && login_again; then
+        AUTH_RETRIED=1
+        if data="$(fetch_json "$url" "$TOKEN" 2>/dev/null)" &&
+           printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1; then
+            cache_save "$cache_name" "$data" || log_warn "Nepodařilo se uložit cache $cache_name."
+            cache_stamp_save "$cache_name" || true
+            printf -v "$target" '%s' "$data"
+            return 0
+        fi
     fi
     if data="$(cache_load "$cache_name" 2>/dev/null)" &&
        printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1; then
         DATA_FROM_CACHE=1
-        printf '%s' "$data"
+        printf -v "$target" '%s' "$data"
         return 0
     fi
     if [[ "$required" == "1" ]]; then
         return 1
     fi
-    printf '%s' '{}'
+    printf -v "$target" '%s' '{}'
 }
 
-USER_DATA="$(load_data "$USER_CACHE" "$USER_URL" 'type == "object"' 1)" || {
+load_data USER_DATA "$USER_CACHE" "$USER_URL" 'type == "object"' 1 || {
     log_error "Informace o uživateli nejsou dostupné online ani z cache."
     exit "$EXIT_NETWORK"
 }
-ABSENCE_DATA="$(load_data "$ABSENCE_CACHE" "$ABSENCE_URL" 'type == "object" and (.Absences | type == "array")' 0)"
-MARKS_DATA="$(load_data "$MARKS_CACHE" "$MARKS_URL" 'type == "object" and (.Subjects | type == "array")' 0)"
-TIMETABLE_DATA="$(load_data "$TIMETABLE_CACHE" "$TIMETABLE_URL" 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' 0)"
+load_data ABSENCE_DATA "$ABSENCE_CACHE" "$ABSENCE_URL" 'type == "object" and (.Absences | type == "array")' 0
+load_data MARKS_DATA "$MARKS_CACHE" "$MARKS_URL" 'type == "object" and (.Subjects | type == "array")' 0
+load_data TIMETABLE_DATA "$TIMETABLE_CACHE" "$TIMETABLE_URL" 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' 0
 printf '%s' "$ABSENCE_DATA" | jq -e 'type == "object" and (.Absences | type == "array")' >/dev/null 2>&1 || ABSENCE_DATA='{"Absences":[],"AbsencesPerSubject":[]}'
 printf '%s' "$MARKS_DATA" | jq -e 'type == "object" and (.Subjects | type == "array")' >/dev/null 2>&1 || MARKS_DATA='{"Subjects":[]}'
 

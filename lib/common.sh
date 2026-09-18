@@ -3,19 +3,19 @@
 # Shared functions and configuration for bakalari-cli.
 # This file is sourced by the individual scripts.
 
-readonly C_RESET="$(printf '\033[0m')"
-readonly C_BOLD="$(printf '\033[1m')"
-readonly C_RED="$(printf '\033[1;31m')"
-readonly C_GREEN="$(printf '\033[1;32m')"
-readonly C_YELLOW="$(printf '\033[1;33m')"
-readonly C_BLUE="$(printf '\033[1;34m')"
-readonly C_CYAN="$(printf '\033[1;36m')"
-readonly C_GRAY="$(printf '\033[0;90m')"
+if ! declare -p C_RESET >/dev/null 2>&1; then readonly C_RESET="$(printf '\033[0m')"; fi
+if ! declare -p C_BOLD >/dev/null 2>&1; then readonly C_BOLD="$(printf '\033[1m')"; fi
+if ! declare -p C_RED >/dev/null 2>&1; then readonly C_RED="$(printf '\033[1;31m')"; fi
+if ! declare -p C_GREEN >/dev/null 2>&1; then readonly C_GREEN="$(printf '\033[1;32m')"; fi
+if ! declare -p C_YELLOW >/dev/null 2>&1; then readonly C_YELLOW="$(printf '\033[1;33m')"; fi
+if ! declare -p C_BLUE >/dev/null 2>&1; then readonly C_BLUE="$(printf '\033[1;34m')"; fi
+if ! declare -p C_CYAN >/dev/null 2>&1; then readonly C_CYAN="$(printf '\033[1;36m')"; fi
+if ! declare -p C_GRAY >/dev/null 2>&1; then readonly C_GRAY="$(printf '\033[0;90m')"; fi
 
 # Shared process exit codes.
-readonly EXIT_CONFIG=2
-readonly EXIT_NETWORK=3
-readonly EXIT_DATA=4
+if ! declare -p EXIT_CONFIG >/dev/null 2>&1; then readonly EXIT_CONFIG=2; fi
+if ! declare -p EXIT_NETWORK >/dev/null 2>&1; then readonly EXIT_NETWORK=3; fi
+if ! declare -p EXIT_DATA >/dev/null 2>&1; then readonly EXIT_DATA=4; fi
 log_info()  { printf '%sINFO:%s  %s\n' "$C_BLUE"   "$C_RESET" "$*" >&2; }
 log_warn()  { printf '%sWARN:%s  %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_error() { printf '%sERROR:%s %s\n' "$C_RED"    "$C_RESET" "$*" >&2; }
@@ -77,6 +77,29 @@ cache_load() {
     file="$(cache_file "$name")" || return 1
     [[ -s "$file" ]] || return 1
     cat "$file"
+}
+
+cache_load_valid() {
+    local name="$1" validator="$2" data
+    data="$(cache_load "$name" 2>/dev/null)" || return 1
+    printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1 || return 1
+    printf '%s' "$data"
+}
+
+fetch_cached_json() {
+    local name="$1" url="$2" token="$3" validator="$4" data
+    if data="$(fetch_json "$url" "$token" 2>/dev/null)" &&
+       printf '%s' "$data" | jq -e "$validator" >/dev/null 2>&1; then
+        cache_save "$name" "$data" || log_warn "Nepodařilo se uložit cache $name."
+        printf '%s' "$data"
+        return 0
+    fi
+    if data="$(cache_load_valid "$name" "$validator")"; then
+        log_warn "API není dostupné; používám uloženou cache $name."
+        printf '%s' "$data"
+        return 0
+    fi
+    return "$EXIT_NETWORK"
 }
 
 

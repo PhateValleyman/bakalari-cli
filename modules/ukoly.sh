@@ -61,15 +61,22 @@ TOKEN="$BAKALARI_TOKEN"
 API_BASE_URL="${BAKALARI_BASE_URL:-https://$SCHOOL}"
 LOGIN_URL="$API_BASE_URL/api/login"
 HOMEWORKS_URL="$API_BASE_URL/api/3/homeworks"
+HOMEWORKS_CACHE="homeworks-$BAKALARI_USER-$SCHOOL.json"
 fetch_homeworks() {
     fetch_json "$HOMEWORKS_URL" "$TOKEN"
 }
 
-# Zkus nejdřív uložený TOKEN; pokud chybí nebo je neplatný, přihlas se znovu.
-if [[ -z "$TOKEN" ]] || ! RESPONSE="$(fetch_homeworks 2>/dev/null)"; then
-    TOKEN="$(bakalari_login "$BAKALARI_USER" "$LOGIN_URL" "$USERNAME" "$PASSWORD")" || exit "$?"
-    save_token "$BAKALARI_USER" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
-    if ! RESPONSE="$(fetch_homeworks)"; then
+if [[ -n "$TOKEN" ]] && RESPONSE="$(fetch_cached_json "$HOMEWORKS_CACHE" "$HOMEWORKS_URL" "$TOKEN" 'type == "object" and (.Homeworks | type == "array")')"; then
+    :
+else
+    TOKEN="$(bakalari_login "$BAKALARI_USER" "$LOGIN_URL" "$USERNAME" "$PASSWORD")" || {
+        RESPONSE="$(cache_load_valid "$HOMEWORKS_CACHE" 'type == "object" and (.Homeworks | type == "array")')" || exit "$EXIT_NETWORK"
+        log_warn "Používám uloženou cache domácích úkolů."
+    }
+    if [[ -n "$TOKEN" ]]; then
+        save_token "$BAKALARI_USER" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
+    fi
+    if [[ -z "${RESPONSE:-}" ]] && ! RESPONSE="$(fetch_cached_json "$HOMEWORKS_CACHE" "$HOMEWORKS_URL" "$TOKEN" 'type == "object" and (.Homeworks | type == "array")')"; then
         log_error "Požadavek na úkoly selhal i po přihlášení."
         exit "$EXIT_NETWORK"
     fi
