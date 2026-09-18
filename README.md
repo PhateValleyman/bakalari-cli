@@ -69,7 +69,7 @@ name       = "your_name"
 class      = "your_class"
 
 # Volitelná lokální cache všech datových modulů.
-# cache_dir = "/custom/path/bakalari"
+# cache_dir = "/custom/path/bakalari-cli"
 
 [colors]
 # Volitelné barvy předmětů v ANSI 256-color paletě (0–255).
@@ -146,7 +146,7 @@ Přístupový token se po prvním přihlášení uloží zpět do konfigurace a 
 
 Moduly `rozvrh`, `ukoly`, `znamky`, `absence` a `info` po úspěšném stažení uloží poslední platné JSON odpovědi lokálně. Pokud zařízení nemá přístup k síti nebo Bakaláři nejsou dostupní, použije se odpovídající cache automaticky.
 
-Výchozí umístění je `~/.cache/bakalari/`. Lze jej přebít proměnnou prostředí `BAKALARI_CACHE_DIR` nebo položkou `cache_dir` v konfiguraci. Cache obsahuje pouze odpovědi API, ne heslo ani přístupový token. Každý modul nejprve zkusí platný token, poté nové přihlášení a nakonec validovanou lokální cache.
+Výchozí umístění je `~/.cache/bakalari-cli/`. Lze jej přebít proměnnou prostředí `BAKALARI_CACHE_DIR` nebo položkou `cache_dir` v konfiguraci. Cache obsahuje pouze odpovědi API, ne heslo ani přístupový token. Každý modul nejprve zkusí platný token, poté nové přihlášení a nakonec validovanou lokální cache.
 
 
 ### Exit statusy

@@ -50,7 +50,7 @@ if [[ -n "${BAKALARI_CACHE_DIR:-}" ]]; then
     BAKALARI_CACHE_DIR_FROM_ENV=1
 else
     BAKALARI_CACHE_DIR_FROM_ENV=0
-    BAKALARI_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/bakalari"
+    BAKALARI_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/bakalari-cli"
 fi
 
 cache_file() {

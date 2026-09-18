@@ -190,7 +190,7 @@ edit_global() {
     local -A global_values=()
     local i field value choice new_value marker selected=0
     global_values[cache_dir]="$(config_value general cache_dir)"
-    global_values[cache_dir]="${global_values[cache_dir]:-${XDG_CACHE_HOME:-$HOME/.cache}/bakalari}"
+    global_values[cache_dir]="${global_values[cache_dir]:-${XDG_CACHE_HOME:-$HOME/.cache}/bakalari-cli}"
     for subject in Hv M Čj Prv Vv Pč Tv; do
         global_values[color_$subject]="$(subject_color "$subject" "$(
             case "$subject" in

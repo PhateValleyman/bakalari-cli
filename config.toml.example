@@ -12,8 +12,8 @@
 user01 = "dzonny"
 # user02 = "johnny"
 
-# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
-# cache_dir = "/custom/path/bakalari"
+# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari-cli.
+# cache_dir = "/custom/path/bakalari-cli"
 
 # The section name must match the value of user01/user02/... above.
 [dzonny]
