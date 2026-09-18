@@ -107,46 +107,34 @@ func (c *Client) FetchTimetable() (*TimetableResponse, error) {
 	return &result, err
 }
 
-// FetchHomeworks retrieves the homework assignments.
+// FetchHomeworks retrieves the homeworks data.
 func (c *Client) FetchHomeworks() (*HomeworksResponse, error) {
 	var result HomeworksResponse
 	err := c.get("/api/3/homeworks", &result)
 	if err == nil {
 		c.saveCache("homeworks", &result)
-		return &result, nil
 	}
-	if c.loadCache("homeworks", &result) == nil {
-		return &result, nil
-	}
-	return nil, err
+	return &result, err
 }
 
-// FetchMarks retrieves the student's grades.
+// FetchMarks retrieves the marks data.
 func (c *Client) FetchMarks() (*MarksResponse, error) {
 	var result MarksResponse
 	err := c.get("/api/3/marks", &result)
 	if err == nil {
 		c.saveCache("marks", &result)
-		return &result, nil
 	}
-	if c.loadCache("marks", &result) == nil {
-		return &result, nil
-	}
-	return nil, err
+	return &result, err
 }
 
-// FetchAbsence retrieves the student's absence.
+// FetchAbsence retrieves the absence data.
 func (c *Client) FetchAbsence() (*AbsenceResponse, error) {
 	var result AbsenceResponse
 	err := c.get("/api/3/absence/student", &result)
 	if err == nil {
 		c.saveCache("absence", &result)
-		return &result, nil
 	}
-	if c.loadCache("absence", &result) == nil {
-		return &result, nil
-	}
-	return nil, err
+	return &result, err
 }
 
 // FetchUserInfo retrieves the student's profile info.
@@ -155,12 +143,36 @@ func (c *Client) FetchUserInfo() (*UserInfo, error) {
 	err := c.get("/api/3/user", &result)
 	if err == nil {
 		c.saveCache("info", &result)
-		return &result, nil
 	}
-	if c.loadCache("info", &result) == nil {
-		return &result, nil
-	}
-	return nil, err
+	return &result, err
+}
+
+// LoadCachedHomeworks loads the last successfully fetched homeworks.
+func (c *Client) LoadCachedHomeworks() (*HomeworksResponse, error) {
+	var result HomeworksResponse
+	if err := c.loadCache("homeworks", &result); err != nil { return nil, err }
+	return &result, nil
+}
+
+// LoadCachedMarks loads the last successfully fetched marks.
+func (c *Client) LoadCachedMarks() (*MarksResponse, error) {
+	var result MarksResponse
+	if err := c.loadCache("marks", &result); err != nil { return nil, err }
+	return &result, nil
+}
+
+// LoadCachedAbsence loads the last successfully fetched absence data.
+func (c *Client) LoadCachedAbsence() (*AbsenceResponse, error) {
+	var result AbsenceResponse
+	if err := c.loadCache("absence", &result); err != nil { return nil, err }
+	return &result, nil
+}
+
+// LoadCachedUserInfo loads the last successfully fetched user info.
+func (c *Client) LoadCachedUserInfo() (*UserInfo, error) {
+	var result UserInfo
+	if err := c.loadCache("info", &result); err != nil { return nil, err }
+	return &result, nil
 }
 
 func (c *Client) get(path string, v interface{}) error {
