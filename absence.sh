@@ -27,8 +27,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-require_cmd curl jq || exit 1
-require_config || exit 1
+require_cmd curl jq || exit "$EXIT_CONFIG"
+require_config || exit "$EXIT_CONFIG"
 
 SCHOOL="$(config_value general school)"
 [[ -n "$SCHOOL_OVERRIDE" ]] && SCHOOL="$SCHOOL_OVERRIDE"
@@ -53,13 +53,13 @@ if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_absence 2>/dev/null)"; then
     save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
     if ! DATA="$(fetch_absence)"; then
         log_error "Požadavek na absenci selhal i po přihlášení."
-        exit 1
+        exit "$EXIT_NETWORK"
     fi
 fi
 
 if ! printf '%s' "$DATA" | jq -e 'type == "object" and (.Absences | type == "array")' >/dev/null 2>&1; then
     log_error "Neplatná odpověď z Bakalářů API pro absenci."
-    exit 1
+    exit "$EXIT_DATA"
 fi
 
 printf '%s=== Absence ===%s\n' "$C_BOLD" "$C_RESET"
