@@ -189,20 +189,6 @@ load_subject_colors() {
     SUBJECT_COLORS[Pč]="$(subject_color Pč 160)"
     SUBJECT_COLORS[Tv]="$(subject_color Tv 170)"
 }
-
-save_token() {
-    local section="$1" token="$2" tmp
-    local rsection="${section//./\\.}"
-    tmp="$(mktemp)" || return 1
-    awk -v section="$rsection" -v token="$token" '
-        $0 ~ "^\\[" section "\\][[:space:]]*$" { insec=1; print; next }
-        /^\[/ { insec=0 }
-        insec && /^[[:space:]]*TOKEN[[:space:]]*=/ { print "TOKEN = \"" token "\""; next }
-        { print }
-    ' "$BAKALARI_CONFIG" > "$tmp" || { rm -f "$tmp"; return 1; }
-    mv "$tmp" "$BAKALARI_CONFIG"
-}
-
 bakalari_login() {
     local school="$1" login_url="$2" username="$3" password="$4" response
     log_info "Přihlašuji se k $school ..."
