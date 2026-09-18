@@ -102,6 +102,7 @@ Profil lze upravit bez ruční editace TOML:
 ./bakalari-cli config
 ./bakalari-cli config --user dzonny
 ./bakalari-cli config --new
+./bakalari-cli config --global
 ```
 
 Po spuštění bez volby se nejdříve vybere rozsah:
