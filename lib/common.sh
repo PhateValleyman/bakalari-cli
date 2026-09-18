@@ -32,7 +32,17 @@ require_cmd() {
     return 0
 }
 
-BAKALARI_CONFIG="${BAKALARI_CONFIG:-$HOME/.config/bakalari/config.toml}"
+# Config precedence:
+# 1. Explicit BAKALARI_CONFIG.
+# 2. Legacy ~/.bakalariclirc, when it exists.
+# 3. Main ~/.config/bakalari-cli/config.toml.
+if [[ -z "${BAKALARI_CONFIG:-}" ]]; then
+    if [[ -f "$HOME/.bakalariclirc" ]]; then
+        BAKALARI_CONFIG="$HOME/.bakalariclirc"
+    else
+        BAKALARI_CONFIG="$HOME/.config/bakalari-cli/config.toml"
+    fi
+fi
 
 # Local cache directory for data that should remain available offline.
 BAKALARI_CACHE_DIR="${BAKALARI_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/bakalari}"
