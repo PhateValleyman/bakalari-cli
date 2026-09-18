@@ -192,8 +192,8 @@ upsert_profile() {
 				print "pass = \\"" pass "\\""
 				print "max_hours = " max_hours
 				print "token = \\"" token "\\""
-				print "name = \\"\\\""
-				print "class = \\"\\\""
+				print "name = \"\""
+				print "class = \"\""
 			}
 		}
 	' "$file" >"$tmp" || {
