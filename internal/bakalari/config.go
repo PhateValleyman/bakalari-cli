@@ -137,9 +137,84 @@ func (c *Config) ResolveUser(requested string) (string, Profile, error) {
 	return profileName, profile, nil
 }
 
-// SaveToken updates the token for a specific profile in the config file.
+// SaveToken updates one profile's token while preserving the rest of the TOML file.
 func SaveToken(path, profileName, token string) error {
-	// In a real implementation, we'd use a TOML library that preserves comments
-	// or perform a surgical update like the bash version.
-	return fmt.Errorf("SaveToken not fully implemented for Go yet")
+	if path == "" {
+		home, _ := os.UserHomeDir()
+		path = filepath.Join(home, ".config", "bakalari-cli", "config.toml")
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read config: %w", err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	section := "[" + profileName + "]"
+	inProfile := false
+	foundProfile := false
+	tokenWritten := false
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]") {
+			inProfile = trimmed == section
+			if inProfile {
+				foundProfile = true
+			}
+			continue
+		}
+		if !inProfile || !strings.HasPrefix(trimmed, "token") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		lines[i] = indent + "token = \"" + escapeTOMLString(token) + "\""
+		tokenWritten = true
+	}
+
+	if !foundProfile {
+		return fmt.Errorf("profile %q not found", profileName)
+	}
+
+	if !tokenWritten {
+		for i, line := range lines {
+			if strings.TrimSpace(line) == section {
+				lines = append(lines[:i+1], append([]string{"token = \"" + escapeTOMLString(token) + "\"" }, lines[i+1:]...)...)
+				break
+			}
+		}
+	}
+
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".config.toml.tmp-*")
+	if err != nil {
+		return fmt.Errorf("create temporary config: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+
+	if err := tmp.Chmod(0600); err != nil {
+		tmp.Close()
+		return fmt.Errorf("set config permissions: %w", err)
+	}
+	if _, err := tmp.WriteString(strings.Join(lines, "\n")); err != nil {
+		tmp.Close()
+		return fmt.Errorf("write temporary config: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close temporary config: %w", err)
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		return fmt.Errorf("replace config: %w", err)
+	}
+	return nil
+}
+
+func escapeTOMLString(value string) string {
+	value = strings.ReplaceAll(value, "\\\\", "\\\\\\\\")
+	value = strings.ReplaceAll(value, "\"", "\\\\"")
+	return value
 }
