@@ -22,10 +22,10 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 
 ## Krátkodobé (bash)
 
-- [ ] Přidat `known.sh` / testovací mock server (viz fake API použité při
+- [x] Přidán `tests/mock_server.py` + `tests/smoke.sh` pro lokální API mock a smoke testy (viz fake API použité při
       vývoji) jako `tests/` s jednoduchými smoke testy pro `rozvrh.sh`
       a `ukoly.sh`.
-- [ ] `shellcheck` do CI (GitHub Actions) – ať se regrese chytí automaticky.
+- [x] `shellcheck` do CI (GitHub Actions) + smoke test workflow – ať se regrese chytí automaticky.
 - [ ] Podpora více škol/účtů zároveň (config už to připouští – `[general]`
       + libovolná sekce podle domény – ale skripty zatím berou jen jednu
       `school` z `[general]`; přidat `--school` argument).
