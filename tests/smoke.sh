@@ -59,7 +59,7 @@ ABSENCE_OUTPUT="$TMP_DIR/absence.out"
 
 "$ROOT_DIR/rozvrh.sh" --user mock >"$ROZVRH_OUTPUT"
 
-grep -Fq 'TOKEN = "test-token"' "$CONFIG"
+grep -Fq 'token = "test-token"' "$CONFIG"
 grep -Fq $'\033[48;5;226m' "$ROZVRH_OUTPUT"
 grep -Fq $'\033[48;5;135m' "$ROZVRH_OUTPUT"
 
