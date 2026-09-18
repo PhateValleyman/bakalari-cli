@@ -8,6 +8,7 @@
 #
 # Proměnné prostředí:
 #   BAKALARI_CONFIG   cesta ke config.toml (výchozí: ~/.config/bakalari/config.toml)
+#   BAKALARI_BASE_URL URL API serveru pro testování
 
 set -o pipefail
 set -u
@@ -28,8 +29,9 @@ SCHOOL="$(config_value general school)"
 SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
 MAX_HOUR="$(config_value general max_hours)"
 MAX_HOUR="${MAX_HOUR:-6}"
-LOGIN_URL="https://${SCHOOL}/api/login"
-TIMETABLE_URL="https://${SCHOOL}/api/3/timetable/actual"
+API_BASE_URL="${BAKALARI_BASE_URL:-https://${SCHOOL}}"
+LOGIN_URL="${API_BASE_URL}/api/login"
+TIMETABLE_URL="${API_BASE_URL}/api/3/timetable/actual"
 
 if command -v gawk >/dev/null 2>&1; then
     AWK="$(command -v gawk)"
