@@ -231,9 +231,11 @@ ensure_general_profile() {
 
 	if grep -Eq '^[[:space:]]*\[general\][[:space:]]*$' "$file"; then
 		awk -v key="user$num" -v section="$section" '
-			/^[[:space:]]*\[general\][[:space:]]*$/ {
+			header=$0
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
+			header == "[general]" {
 				print
-				print key " = \\"" section "\\""
+				printf "%s = \"%s\"\\n", key, section
 				next
 			}
 			{ print }
