@@ -12,6 +12,9 @@
 user01 = "dzonny"
 # user02 = "johnny"
 
+# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
+# cache_dir = "/custom/path/bakalari"
+
 # The section name must match the value of user01/user02/... above.
 [dzonny]
 host  = "zssumava.bakalari.cz"
@@ -34,8 +37,6 @@ class = "your_class"
 # class = "your_class"
 
 
-# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
-# cache_dir = "/custom/path/bakalari"
 [colors]
 # Optional ANSI 256-color palette for timetable subjects.
 # If a subject is missing here, rozvrh.sh uses its built-in default color.
@@ -48,5 +49,3 @@ Vv  = 44
 Pč  = 160
 Tv  = 170
 
-# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
-# cache_dir = "/custom/path/bakalari"
