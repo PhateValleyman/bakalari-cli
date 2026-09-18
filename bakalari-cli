@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# bakalari-cli – command dispatcher for the Bakaláři CLI.
+set -o pipefail
+set -u
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)"
+
+usage() {
+    cat <<'EOF'
+Bakaláři CLI
+
+Použití:
+  bakalari-cli <modul> [volby]
+
+Moduly:
+  absence     Přehled absence
+  info        Informace o uživateli
+  login       Přihlášení / konfigurace
+  rozvrh      Aktuální rozvrh
+  ukoly       Domácí úkoly
+  znamky      Známky
+
+Volby:
+  --help      Zobrazit tuto nápovědu
+  --version   Zobrazit verzi
+
+Příklad:
+  bakalari-cli info
+  bakalari-cli absence --user dzonny
+
+Nápověda modulu:
+  bakalari-cli <modul> --help
+EOF
+}
+
+version() {
+    printf '%s\n' "bakalari-cli 0.1.0"
+}
+
+show_home() {
+    usage
+    printf '\n'
+    if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+        # shellcheck source=lib/common.sh
+        source "$SCRIPT_DIR/lib/common.sh"
+        if require_config >/dev/null 2>&1 && resolve_user "" >/dev/null 2>&1; then
+            printf 'Aktuální uživatel:\n'
+            printf '  Profil: %s\n' "$BAKALARI_USER"
+            [[ -n "${BAKALARI_NAME:-}" ]] && printf '  Jméno: %s\n' "$BAKALARI_NAME"
+            [[ -n "${BAKALARI_CLASS:-}" ]] && printf '  Třída: %s\n' "$BAKALARI_CLASS"
+        else
+            printf 'Aktuální uživatel: není nakonfigurován\n'
+        fi
+    fi
+}
+
+if [[ $# -eq 0 ]]; then
+    show_home
+    exit 0
+fi
+
+case "$1" in
+    -h|--help)
+        usage
+        ;;
+    --version)
+        version
+        ;;
+    absence|info|login|rozvrh|ukoly|znamky)
+        module="$1"
+        shift
+        exec bash "$SCRIPT_DIR/modules/$module.sh" "$@"
+        ;;
+    *)
+        printf 'Neznámý modul: %s\n\n' "$1" >&2
+        usage >&2
+        exit 2
+        ;;
+esac
