@@ -48,7 +48,7 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
 - [x] Vyextrahovat JSON tvary odpovědí Bakalářů (login, timetable,
       homeworks, marks, absence, user info) do `docs/api-notes.md` jako podklad pro Go
       struktury (`struct { ... }` + `json:"..."` tagy).
-- [ ] Navrhnout `internal/bakalari` balíček v Go s rozhraním, které
+- [x] Navrhnout `internal/bakalari` balíček v Go s rozhraním, které
       odpovídá dnešním bash funkcím v `lib/common.sh`:
       - `Login(school, user, pass) (Token, error)`
       - `FetchTimetable(token) (Timetable, error)`
