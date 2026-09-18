@@ -34,6 +34,36 @@ require_cmd() {
 
 BAKALARI_CONFIG="${BAKALARI_CONFIG:-$HOME/.config/bakalari/config.toml}"
 
+# Local cache directory for data that should remain available offline.
+BAKALARI_CACHE_DIR="${BAKALARI_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/bakalari}"
+
+cache_file() {
+    local name="$1" safe
+    safe="${name//[^A-Za-z0-9._-]/_}"
+    mkdir -p "$BAKALARI_CACHE_DIR" 2>/dev/null || return 1
+    printf '%s/%s' "$BAKALARI_CACHE_DIR" "$safe"
+}
+
+cache_save() {
+    local name="$1" data="$2" file tmp
+    file="$(cache_file "$name")" || return 1
+    tmp="$(mktemp "${file}.tmp.XXXXXX")" || return 1
+    if ! printf '%s' "$data" >"$tmp"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    chmod 600 "$tmp" 2>/dev/null || true
+    mv -f "$tmp" "$file"
+}
+
+cache_load() {
+    local name="$1" file
+    file="$(cache_file "$name")" || return 1
+    [[ -s "$file" ]] || return 1
+    cat "$file"
+}
+
+
 require_config() {
     if [[ ! -f "$BAKALARI_CONFIG" ]]; then
         log_error "Konfigurační soubor nenalezen: $BAKALARI_CONFIG"
