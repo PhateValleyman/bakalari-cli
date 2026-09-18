@@ -141,6 +141,10 @@ if [[ "$MARKS_COUNT" -eq 0 ]]; then
 else
     printf '%s' "$MARKS_DATA" | jq -r '.Subjects[] | [(.Subject.Abbrev // .Subject.Name // "?"),(.Subject.Name // .Subject.Abbrev // "?"),(.AverageText // "-")] | @tsv' |
     while IFS=
+        printf '%s%-28s %-12s%s\n' "$(c256 226)" "$abbrev ($name)" "$average" "$C_RESET"
+    done
+    printf '%sCelkový průměr předmětů:%s %s%s%s\n' "$(c256 39)" "$C_RESET" "$(c256 226)" "$OVERALL_AVG" "$C_RESET"
+fi
 \t' read -r abbrev name average; do
         printf '%s%-28s %-12s%s\n' "$(c256 226)" "$abbrev ($name)" "$average" "$C_RESET"
     done
