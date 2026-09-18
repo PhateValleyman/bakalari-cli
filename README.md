@@ -1,15 +1,19 @@
 # bakalari-cli
 
-Malé shellové nástroje pro práci s API systému Bakaláři z terminálu / Termuxu.
+CLI pro práci s API systému Bakaláři z terminálu / Termuxu.
 
-- **`rozvrh.sh`** – vypíše barevný rozvrh přímo do terminálu.
-- **`ukoly.sh`** – zkontroluje nesplněné domácí úkoly a (na Androidu v Termuxu) o nich pošle notifikaci přes `termux-notification`.
-- **`znamky.sh`** – zobrazí známky a průměry.
-- **`absence.sh`** – zobrazí souhrn absence a přehled podle předmětů.
-- **`info.sh`** – zobrazí profil studenta, třídu, třídního učitele, docházku a průměry podle předmětů.
-- **`login.sh`** – interaktivně vytvoří nebo upraví profil a ověří přihlášení.
+Hlavním vstupním bodem je **`bakalari-cli`**. Jednotlivé funkce jsou moduly CLI a lze je dále rozšiřovat bez změny základního rozhraní.
 
-Všechny skripty sdílejí stejnou konfiguraci, přihlašovací logiku a barevné pomocné funkce přes `lib/common.sh`.
+- **`bakalari-cli rozvrh`** – barevný rozvrh.
+- **`bakalari-cli ukoly`** – kontrola nesplněných domácích úkolů + notifikace v Termuxu.
+- **`bakalari-cli znamky`** – známky a průměry.
+- **`bakalari-cli absence`** – absence.
+- **`bakalari-cli info`** – profil studenta, třída, třídní učitel, docházka a průměry.
+- **`bakalari-cli login`** – interaktivní přihlášení a konfigurace.
+
+Samostatné skripty zůstávají jako kompatibilní wrappery. Nové funkce se přidávají jako moduly pod **`modules/`**.
+
+Všechny moduly sdílejí konfiguraci, přihlašování a pomocné funkce přes `lib/common.sh`.
 
 ## Požadavky
 
@@ -36,7 +40,7 @@ ipkg install jq curl gawk
 ```bash
 git clone https://github.com/PhateValleyman/bakalari-cli.git
 cd bakalari-cli
-chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh info.sh login.sh
+chmod +x bakalari-cli rozvrh.sh ukoly.sh znamky.sh absence.sh info.sh login.sh
 
 mkdir -p ~/.config/bakalari-cli
 cp config.toml.example ~/.config/bakalari-cli/config.toml
@@ -134,19 +138,32 @@ Výchozí umístění je `~/.cache/bakalari/timetable-<user>-<school>.json`. Lze
 
 ## Použití
 
+Bez argumentů zobrazí CLI usage a krátké informace o aktuálně nakonfigurovaném profilu:
+
 ```bash
-./rozvrh.sh          # barevný rozvrh
-./ukoly.sh           # kontrola nesplněných úkolů (+ notifikace v Termuxu)
-./znamky.sh          # známky a průměry
-./absence.sh         # absence
-
-./rozvrh.sh --help
-./ukoly.sh  --help
-
-# Use another configured school/account without changing [general].
-./rozvrh.sh --user johnny
-./ukoly.sh --user johnny
+bakalari-cli
 ```
+
+Moduly se spouštějí jako subcommandy:
+
+```bash
+bakalari-cli info
+bakalari-cli absence
+bakalari-cli rozvrh
+bakalari-cli ukoly
+bakalari-cli znamky
+bakalari-cli login
+```
+
+Každý modul podporuje vlastní nápovědu a stávající volby:
+
+```bash
+bakalari-cli absence --help
+bakalari-cli rozvrh --user johnny
+bakalari-cli info --list-users
+```
+
+Hlavní CLI je navrženo jako rozšiřitelný dispatcher. Nový modul se přidá do `modules/` a následně do dispatcheru; stávající uživatelské rozhraní se tím nemění.
 
 ### Testy
 
@@ -157,7 +174,7 @@ Projekt obsahuje lokální API mock a smoke testy bez nutnosti přihlašovat se 
 bash tests/smoke.sh
 ```
 
-CI automaticky spouští `shellcheck` nad shellovými skripty a následně stejné smoke testy.
+GitLab CI spouští `shellcheck`, kontrolu syntaxe a stejné smoke testy.
 
 ```
 
@@ -171,19 +188,29 @@ CI automaticky spouští `shellcheck` nad shellovými skripty a následně stejn
 
 ```
 bakalari-cli/
-├── rozvrh.sh            # zobrazení rozvrhu
-├── ukoly.sh             # kontrola domácích úkolů + notifikace
-├── znamky.sh            # známky a průměry
-├── absence.sh           # absence
+├── bakalari-cli          # hlavní CLI dispatcher
+├── modules/              # jednotlivé CLI moduly
+│   ├── absence.sh
+│   ├── info.sh
+│   ├── login.sh
+│   ├── rozvrh.sh
+│   ├── ukoly.sh
+│   └── znamky.sh
+├── absence.sh             # kompatibilní wrapper
+├── info.sh                # kompatibilní wrapper
+├── login.sh               # kompatibilní wrapper
+├── rozvrh.sh              # kompatibilní wrapper
+├── ukoly.sh               # kompatibilní wrapper
+├── znamky.sh              # kompatibilní wrapper
 ├── lib/
-│   └── common.sh        # sdílená konfigurace, login, barvy, logování
-├── config.toml.example  # vzor konfigurace
+│   └── common.sh          # sdílená konfigurace, login, barvy, logování
+├── config.toml.example
 ├── docs/
-│   └── api-notes.md     # použité tvary odpovědí API v3
-└── TODOO.md             # plánované úpravy a roadmapa (mj. přechod na Go)
+│   └── api-notes.md
+└── TODOO.md
 ```
 
-Veškerá logika společná pro více skriptů (čtení configu, přihlašování k Bakalářům, ukládání tokenu, barevné logovací funkce a načítání konfigurace barev) patří do `lib/common.sh`. Nový skript by měl tento soubor sourcovat místo toho, aby si logiku duplikoval.
+Veškerá logika společná pro více modulů patří do `lib/common.sh`. Nový modul patří do `modules/` a nemá duplikovat centrální konfigurační ani autentizační logiku.
 
 ## Bezpečnost
 
