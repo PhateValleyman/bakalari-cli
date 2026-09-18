@@ -179,11 +179,7 @@ upsert_profile() {
 		insec && /^[[:space:]]*pass[[:space:]]*=/ { next }
 		insec && /^[[:space:]]*max_hours[[:space:]]*=/ { next }
 		insec && /^[[:space:]]*token[[:space:]]*=/ { next }
-		/^[[[:space:]]/ {
-			header=$0
-			gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
-			if (substr(header, 1, 1) == "[") insec=0
-		}
+		substr(header, 1, 1) == "[" { insec=0 }
 		{ print }
 		END {
 			if (!found) {
