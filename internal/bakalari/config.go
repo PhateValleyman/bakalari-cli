@@ -133,6 +133,12 @@ func (c *Config) ResolveUser(requested string) (string, Profile, error) {
 	if !ok {
 		return "", Profile{}, fmt.Errorf("profile %s not found", profileName)
 	}
+	if profile.Host == "" || profile.User == "" {
+		return "", Profile{}, fmt.Errorf("profile %s has incomplete configuration", profileName)
+	}
+	if profile.MaxHours <= 0 {
+		profile.MaxHours = 6
+	}
 
 	return profileName, profile, nil
 }
