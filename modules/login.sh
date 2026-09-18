@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
             usage_option "--user USER" "Upravit konkrétní profil"
             usage_option "--help" "Zobrazit tuto nápovědu"
             exit 0
-            
+            ;;
 		--user)
 			[[ $# -ge 2 && -n "$2" ]] || {
 				log_error "Volba --user vyžaduje název profilu."
