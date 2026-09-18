@@ -86,30 +86,28 @@ color_swatch() {
 
 render_color_picker() {
     local current="$1" index="$2"
-    local i row col marker name value
+    local i row col marker value
 
     printf '\033[2J\033[H'
     printf '%s%s%s\n' "$C_BOLD" "Výběr barvy předmětu" "$C_RESET"
-    printf '%sAktuální: %s%b  (↑/↓/←/→, Enter, Esc)%s\n\n' "$C_GRAY" "$current" "$(color_preview "$current")" "$C_RESET"
+    printf '%sAktuální: %s%b  (↑/↓/←/→, Enter, Esc)%s\n\n' \
+        "$C_GRAY" "$current" "$(color_preview "$current")" "$C_RESET"
 
-    for ((row=0; row<4; row++)); do
-        for ((col=0; col<4; col++)); do
-            i=$((row * 4 + col))
+    for ((row=0; row<16; row++)); do
+        for ((col=0; col<16; col++)); do
+            i=$((row * 16 + col))
             marker=' '
             (( i == index )) && marker='>'
-            value="${COLOR_VALUES[i]}"
-            name="${COLOR_NAMES[i]}"
-            printf '%s %2d %b%-20s%b' "$marker" "$value" "$(color_text "$value")" "$name" "$C_RESET"
-            (( col < 3 )) && printf '  '
+            value="$i"
+            printf '%s%3d%b  ' "$marker" "$value" "$(color_text "$value")"
         done
         printf '\n'
     done
 
     printf '\n%sEnter%s potvrdit   %sEsc%s zrušit\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
 }
-
 select_color_value() {
-    local current="$1" selected="$2"
+    local current="$1"
     local index=0 key old_stty
 
     if ! [[ -t 0 && -t 2 ]]; then
@@ -117,9 +115,9 @@ select_color_value() {
         return
     fi
 
-    for i in "${!COLOR_VALUES[@]}"; do
-        [[ "${COLOR_VALUES[i]}" == "$current" ]] && index="$i"
-    done
+    if [[ "$current" =~ ^[0-9]+$ ]] && (( current >= 0 && current <= 255 )); then
+        index="$current"
+    fi
 
     old_stty="$(stty -g)" || return 1
     stty -echo -icanon min 1 time 0 || return 1
@@ -128,23 +126,22 @@ select_color_value() {
         render_color_picker "$current" "$index" >&2
         IFS= read -r -s -n1 key
 
-        if [[ "$key" == $'\\e' ]]; then
+        if [[ "$key" == $'\e' ]]; then
             IFS= read -r -s -n2 key
             case "$key" in
-                '[A') (( index >= 4 )) && ((index -= 4)) ;;
-                '[B') (( index < 12 )) && ((index += 4)) ;;
-                '[C') (( index % 4 < 3 )) && ((index++)) ;;
-                '[D') (( index % 4 > 0 )) && ((index--)) ;;
+                '[A') (( index >= 16 )) && ((index -= 16)) ;;
+                '[B') (( index < 240 )) && ((index += 16)) ;;
+                '[C') (( index % 16 < 15 )) && ((index++)) ;;
+                '[D') (( index % 16 > 0 )) && ((index--)) ;;
                 '') stty "$old_stty"; return 1 ;;
             esac
-        elif [[ "$key" == $'\n' || "$key" == $'\\r' ]]; then
+        elif [[ "$key" == $'\n' || "$key" == $'\r' ]]; then
             stty "$old_stty"
-            printf '%s' "${COLOR_VALUES[index]}"
+            printf '%s' "$index"
             return 0
         fi
     done
 }
-
 select_profile() {
     local profiles choice
     profiles="$(list_users | cut -f2-)"
