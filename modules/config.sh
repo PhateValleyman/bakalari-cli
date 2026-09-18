@@ -88,9 +88,9 @@ render_color_picker() {
     local current="$1" index="$2"
     local i row col marker name value
 
-    printf '\\033[2J\\033[H'
-    printf '%s%s%s\\n' "$C_BOLD" "Výběr barvy předmětu" "$C_RESET"
-    printf '%sAktuální: %s%b  (↑/↓/←/→, Enter, Esc)%s\\n\\n' "$C_GRAY" "$current" "$(color_preview "$current")" "$C_RESET"
+    printf '\033[2J\033[H'
+    printf '%s%s%s\n' "$C_BOLD" "Výběr barvy předmětu" "$C_RESET"
+    printf '%sAktuální: %s%b  (↑/↓/←/→, Enter, Esc)%s\n\n' "$C_GRAY" "$current" "$(color_preview "$current")" "$C_RESET"
 
     for ((row=0; row<4; row++)); do
         for ((col=0; col<4; col++)); do
@@ -102,10 +102,10 @@ render_color_picker() {
             printf '%s %2d %b%-20s%b' "$marker" "$value" "$(color_text "$value")" "$name" "$C_RESET"
             (( col < 3 )) && printf '  '
         done
-        printf '\\n'
+        printf '\n'
     done
 
-    printf '\\n%sEnter%s potvrdit   %sEsc%s zrušit\\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
+    printf '\n%sEnter%s potvrdit   %sEsc%s zrušit\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
 }
 
 select_color_value() {
@@ -137,7 +137,7 @@ select_color_value() {
                 '[D') (( index % 4 > 0 )) && ((index--)) ;;
                 '') stty "$old_stty"; return 1 ;;
             esac
-        elif [[ "$key" == $'\\n' || "$key" == $'\\r' ]]; then
+        elif [[ "$key" == $'\n' || "$key" == $'\\r' ]]; then
             stty "$old_stty"
             printf '%s' "${COLOR_VALUES[index]}"
             return 0
