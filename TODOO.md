@@ -31,6 +31,7 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
       používají sdílený login/config vzor a API v3 endpointy.
 - [x] Sjednotit chybové kódy exit statusů: `2` = konfigurace/argumenty,
       `3` = síť/API transport, `4` = neplatná data.
+- [x] Lokálně cachovat poslední platný rozvrh a při offline provozu jej automaticky použít.
 
 ## Příprava na přechod na Go
 
