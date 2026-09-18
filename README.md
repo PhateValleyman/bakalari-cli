@@ -48,8 +48,17 @@ Hlavní konfigurace žije v `~/.config/bakalari-cli/config.toml`. Pokud existuje
 
 ```toml
 [general]
-school     = "zssumava.bakalari.cz"   # doména Bakalářů bez "https://"
-max_hours  = 6                          # kolik hodin zobrazit v rozvrhu
+user01 = "dzonny"
+# user02 = "johnny"
+
+[dzonny]
+host       = "zssumava.bakalari.cz"
+user       = "your_username"
+pass       = "your_password"
+max_hours  = 6
+token      = ""
+name       = "your_name"
+class      = "your_class"
 
 [colors]
 # Volitelné barvy předmětů v ANSI 256-color paletě (0–255).
@@ -124,8 +133,8 @@ Výchozí umístění je `~/.cache/bakalari/timetable-<school>.json`. Lze jej p�
 ./ukoly.sh  --help
 
 # Use another configured school/account without changing [general].
-./rozvrh.sh --school another-school.example
-./ukoly.sh --school another-school.example
+./rozvrh.sh --user johnny
+./ukoly.sh --user johnny
 ```
 
 ### Testy
