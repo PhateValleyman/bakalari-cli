@@ -59,13 +59,14 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
       ne dva samostatné skripty.
 - [x] Barevný výstup v Go přes `fatih/color` nebo `lipgloss` – zachovat
       stejnou barevnou paletu předmětů jako dnes v `awk` části `rozvrh.sh`.
-- [ ] Cross-compile pro `arm64` (Redmi Note 11, Shield tablet) a `mipsel`
-      (ZyXEL NSA320) – ověřit, že binárka bez problémů běží i na starším
-      Android 5.1 / ffp.
+- [ ] Cross-compile pro `arm64` (Redmi Note 11), `armv7` (Shield Tablet K1)
+      a `armv5` (ZyXEL NSA320/ffp) – ověřit běh na cílových zařízeních.
+      Android 5.1 je pouze historický kompatibilitní cíl; aktuální Shield běží na Androidu 8.1.
 - [/] Až bude Go verze na paritě s bash verzí (rozvrh + úkoly + notifikace),
       bash skripty přesunout do `legacy/` a `README.md` přepsat na Go verzi
       jako primární.
-      (Aktuálně implementováno: rozvrh, úkoly, známky, absence, info, cache)
+      (Aktuálně implementováno: rozvrh, úkoly, známky, absence, info, cache;
+      Go klient nově odděluje online chyby od offline cache a umí atomicky ukládat token.)
 
 ## Nápady (bez závazku)
 
