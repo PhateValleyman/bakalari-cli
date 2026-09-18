@@ -100,14 +100,15 @@ if [[ -n "$DAILY_TOTALS" ]]; then
     printf '%s\n' "$DAILY_TOTALS" |
         sort -r -k1,1 |
         while IFS=$'\t' read -r date day hours missed late soon unsolved; do
+            # jq strptime("%Y-%m-%d") uses Sunday=0 ... Saturday=6.
             case "$day" in
-                0) day_name="Po" ;;
-                1) day_name="Út" ;;
-                2) day_name="St" ;;
-                3) day_name="Čt" ;;
-                4) day_name="Pá" ;;
-                5) day_name="So" ;;
-                6) day_name="Ne" ;;
+                0) day_name="Ne" ;;
+                1) day_name="Po" ;;
+                2) day_name="Út" ;;
+                3) day_name="St" ;;
+                4) day_name="Čt" ;;
+                5) day_name="Pá" ;;
+                6) day_name="So" ;;
                 *) day_name="?" ;;
             esac
 
