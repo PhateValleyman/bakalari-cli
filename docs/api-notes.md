@@ -10,7 +10,8 @@ Pracovní poznámky k API v3 používanému v bakalari-cli.
 | Rozvrh | GET /api/3/timetable/actual | Days, Hours, Subjects, Teachers |
 | Úkoly | GET /api/3/homeworks | Homeworks |
 | Známky | GET /api/3/marks | Subjects[] |
-| Absence | GET /api/3/absence/student | Absences[], AbsencesPerSubject[] |\n| User info | GET /api/3/user | UserUID, FullName, Class, UserType, ... |
+| Absence | GET /api/3/absence/student | Absences[], AbsencesPerSubject[] |
+| User info | GET /api/3/user | UserUID, FullName, Class, UserType, ... |
 
 Všechny GET endpointy používají Authorization: Bearer ACCESS_TOKEN.
 

@@ -64,7 +64,7 @@ fi
 
 SCHOOL="$BAKALARI_HOST"
 MAX_HOUR="${BAKALARI_MAX_HOURS:-6}"
-API_BASE_URL="${BAKALARI_BASE_URL:-https://$SCHOOL}"
+API_BASE_URL="$(api_base_url "$SCHOOL")"
 LOGIN_URL="$API_BASE_URL/api/login"
 TIMETABLE_URL="$API_BASE_URL/api/3/timetable/actual"
 

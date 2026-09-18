@@ -24,15 +24,17 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 
 - [x] Přidán `tests/mock_server.py` + `tests/smoke.sh` pro lokální API mock
       a smoke testy pro `rozvrh.sh`, `ukoly.sh`, `znamky.sh` a `absence.sh`.
-- [x] `shellcheck` do CI (GitHub Actions) + smoke test workflow – ať se regrese chytí automaticky.
-- [x] Podpora více škol/účtů zároveň: skripty podporují `--school DOMÉNA`
-      (nebo `--school=DOMÉNA`) a použijí odpovídající sekci podle domény.
+- [x] `shellcheck` do CI (GitLab CI) + smoke test workflow – ať se regrese chytí automaticky.
+- [x] Podpora více škol/účtů zároveň přes profily `userNN` a volbu `--user`.
 - [x] Přidat `znamky.sh` (známky) a `absence.sh` (absence) – oba skripty
       používají sdílený login/config vzor a API v3 endpointy.
 - [x] Sjednotit chybové kódy exit statusů: `2` = konfigurace/argumenty,
       `3` = síť/API transport, `4` = neplatná data.
 - [x] Lokálně cachovat poslední platný rozvrh a při offline provozu jej automaticky použít.
 - [x] Přidat `info.sh` – profil studenta, třída, třídní učitel, docházka a průměry podle předmětů.
+- [x] Přidat validovanou offline cache pro všechny datové moduly.
+- [x] Přidat `cache` modul pro výpis cesty, seznam souborů a bezpečné vyčištění cache.
+- [x] Sjednotit normalizaci URL školy a přidat timeouty pro přihlašovací požadavek.
 
 ## Příprava na přechod na Go
 

@@ -107,6 +107,16 @@ grep -Fq "Test" "$TMP_DIR/info-offline.out"
 grep -Fq "Student" "$TMP_DIR/info-offline.out"
 grep -Fq "CACHE" "$TMP_DIR/info-offline.out"
 
+"$ROOT_DIR/bakalari-cli" cache --path >"$TMP_DIR/cache-path.out"
+grep -Fqx "$TMP_DIR/cache" "$TMP_DIR/cache-path.out"
+"$ROOT_DIR/bakalari-cli" cache --list >"$TMP_DIR/cache-list.out"
+grep -Fq "marks-mock-mock.bakalari.test.json" "$TMP_DIR/cache-list.out"
+"$ROOT_DIR/bakalari-cli" cache --clear >"$TMP_DIR/cache-clear.out" 2>"$TMP_DIR/cache-clear.err"
+if find "$TMP_DIR/cache" -maxdepth 1 -type f -print -quit | grep -q .; then
+    echo "ERROR: cache clear left files behind" >&2
+    exit 1
+fi
+
 printf 'OK: rozvrh.sh smoke test\n'
 printf 'OK: ukoly.sh smoke test\n'
 printf 'OK: znamky.sh smoke test\n'
@@ -118,3 +128,4 @@ printf 'OK: offline cache smoke test\n'
 "$ROOT_DIR/bakalari-cli" --help >"$TMP_DIR/cli-help.out"
 grep -Fq "Bakaláři CLI" "$TMP_DIR/cli-help.out"
 grep -Fq "absence" "$TMP_DIR/cli-help.out"
+"$ROOT_DIR/bakalari-cli" --version | grep -Fq "bakalari-cli 0.2.0"

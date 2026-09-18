@@ -253,7 +253,7 @@ bakalari_login() {
     local school="$1" login_url="$2" username="$3" password="$4" response
     log_info "Přihlašuji se k $school ..."
     response="$(
-        curl -fsS -X POST "$login_url" \
+        curl -fsS --connect-timeout 10 --max-time 30 -X POST "$login_url" \
             -H "Content-Type: application/x-www-form-urlencoded" \
             --data-urlencode "client_id=ANDR" \
             --data-urlencode "grant_type=password" \
@@ -271,7 +271,18 @@ bakalari_login() {
 }
 
 fetch_json() {
-    curl -fsS -X GET "$1" -H "Authorization: Bearer $2" || return "$EXIT_NETWORK"
+    curl -fsS --connect-timeout 10 --max-time 30 -X GET "$1" -H "Authorization: Bearer $2" ||
+        return "$EXIT_NETWORK"
+}
+
+api_base_url() {
+    local host="${1:-}" base
+    base="${BAKALARI_BASE_URL:-$host}"
+    base="${base%/}"
+    if [[ "$base" != http://* && "$base" != https://* ]]; then
+        base="https://$base"
+    fi
+    printf '%s' "$base"
 }
 
 notify_android() {

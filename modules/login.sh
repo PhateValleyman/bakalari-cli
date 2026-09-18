@@ -136,7 +136,7 @@ MAX_HOURS="${MAX_HOURS:-$DEFAULT_MAX_HOURS}"
 
 printf '\n%sOvěřuji přihlášení...%s\n' "$C_BOLD" "$C_RESET"
 
-API_BASE_URL="${BAKALARI_BASE_URL:-https://${HOST}}"
+API_BASE_URL="$(api_base_url "$HOST")"
 LOGIN_URL="$API_BASE_URL/api/login"
 
 TOKEN="$(bakalari_login "$PROFILE" "$LOGIN_URL" "$LOGIN" "$PASSWORD")" || {

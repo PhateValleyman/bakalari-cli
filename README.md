@@ -9,6 +9,7 @@ Hlavním vstupním bodem je **`bakalari-cli`**. Jednotlivé funkce jsou moduly C
 - **`bakalari-cli znamky`** – známky a průměry.
 - **`bakalari-cli absence`** – absence.
 - **`bakalari-cli info`** – profil studenta, třída, třídní učitel, docházka a průměry.
+- **`bakalari-cli cache`** – kontrola a bezpečné vyčištění lokální cache.
 - **`bakalari-cli login`** – interaktivní přihlášení a konfigurace.
 
 Samostatné skripty zůstávají jako kompatibilní wrappery. Nové funkce se přidávají jako moduly pod **`modules/`**.
@@ -66,7 +67,7 @@ token      = ""
 name       = "your_name"
 class      = "your_class"
 
-# Volitelná lokální cache rozvrhu.
+# Volitelná lokální cache všech datových modulů.
 # cache_dir = "/custom/path/bakalari"
 
 [colors]
@@ -86,8 +87,8 @@ Tv  = 170
 Novou instalaci nebo další účet lze vytvořit bez ručního editování TOML:
 
 ```bash
-./login.sh
-./login.sh --user johnny
+./bakalari-cli login
+./bakalari-cli login --user johnny
 ```
 
 Skript vytvoří `~/.config/bakalari-cli/config.toml`, přidá profil do `[general]` jako `userNN`, bezpečně načte heslo bez jeho zobrazení na terminálu, ověří přihlášení proti `/api/login` a uloží získaný `token`. Při použití existujícího profilu se jeho host, uživatelské jméno, heslo, počet hodin a token aktualizují.
@@ -153,6 +154,8 @@ bakalari-cli rozvrh
 bakalari-cli ukoly
 bakalari-cli znamky
 bakalari-cli login
+bakalari-cli cache --list
+bakalari-cli cache --clear
 ```
 
 Každý modul podporuje vlastní nápovědu a stávající volby:
@@ -181,7 +184,7 @@ GitLab CI spouští `shellcheck`, kontrolu syntaxe a stejné smoke testy.
 ### Automatizace (Termux crond / cron)
 
 ```cron
-*/30 7-16 * * 1-5  bash ~/bakalari-cli/ukoly.sh >> ~/bakalari-cli.log 2>&1
+*/30 7-16 * * 1-5  bash ~/bakalari-cli/bakalari-cli ukoly >> ~/bakalari-cli.log 2>&1
 ```
 
 ## Struktura projektu
