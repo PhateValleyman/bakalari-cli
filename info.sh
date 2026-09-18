@@ -2,7 +2,7 @@
 # info.sh – souhrn informací o studentovi
 set -o pipefail
 set -u
-SCRIPT_DIR="$(cd -- "$(dirname -- "$BASH_SOURCE")" >/dev/null 2>&1 && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
