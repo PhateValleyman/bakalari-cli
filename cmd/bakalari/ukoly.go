@@ -67,7 +67,11 @@ var ukolyCmd = &cobra.Command{
 		var unfinished []string
 		for _, hw := range homeworks.Homeworks {
 			if !hw.IsDone {
-				msg := fmt.Sprintf("[%s] %s (do: %s)", hw.Subject.Abbrev, hw.Content, hw.DateEnd[:10])
+				date := hw.DateEnd
+				if len(date) > 10 {
+					date = date[:10]
+				}
+				msg := fmt.Sprintf("[%s] %s (do: %s)", hw.Subject.Abbrev, hw.Content, date)
 				unfinished = append(unfinished, msg)
 			}
 		}
