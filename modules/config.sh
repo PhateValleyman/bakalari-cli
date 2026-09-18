@@ -67,6 +67,20 @@ color_preview() {
     printf '\033[48;5;%sm\033[38;5;255m%s\033[0m' "$color" "$label"
 }
 
+show_color_values() {
+    local -n values_ref="$1" -n labels_ref="$2"
+    local i field value
+    printf '\n%s%-20s %-8s %s%s\n' "$C_BOLD" "Barva" "Číslo" "Náhled" "$C_RESET" >&2
+    printf '%s\n' '------------------------------------------------' >&2
+    for i in "${!labels_ref[@]}"; do
+        field="${values_ref[i]}"
+        [[ "$field" == color_* ]] || continue
+        value="${global_values[$field]:-${VALUES[$field]:-}}"
+        printf '%-20s %-8s %b\n' "${labels_ref[i]}" "${value:--}" "$(color_preview "$value")" >&2
+    done
+    printf '\n' >&2
+}
+
 select_profile() {
     local profiles choice
     profiles="$(list_users | cut -f2-)"
@@ -120,6 +134,7 @@ edit_global() {
 
     while :; do
         if command -v gum >/dev/null 2>&1; then
+            show_color_values global_fields global_labels
             menu_items=("← Zpět")
             for i in "${!global_labels[@]}"; do
                 field="${global_fields[i]}"
@@ -292,6 +307,9 @@ edit_field() {
 selected=0
 while :; do
     if command -v gum >/dev/null 2>&1; then
+        color_fields=("${FIELDS[@]:6}")
+        color_labels=("${LABELS[@]:6}")
+        show_color_values color_fields color_labels
         menu_items=("← Zpět")
         for i in "${!LABELS[@]}"; do
             field="${FIELDS[i]}"

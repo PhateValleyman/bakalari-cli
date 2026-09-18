@@ -35,12 +35,14 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 - [x] Přidat validovanou offline cache pro všechny datové moduly.
 - [x] Přidat `cache` modul pro výpis cesty, seznam souborů a bezpečné vyčištění cache.
 - [x] Sjednotit normalizaci URL školy a přidat timeouty pro přihlašovací požadavek.
+- [x] Přidat interaktivní editor `config` s oddělenými rozsahy `users` a `global`.
+- [x] Přidat navigaci `← Zpět`, výchozí hodnoty a přímé ANSI náhledy barev.
 
 ## Příprava na přechod na Go
 
 Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
 
-- [ ] Zafixovat formát `config.toml` tak, jak je teď (sekce `[general]` +
+- [x] Zafixovat formát `config.toml` tak, jak je teď (sekce `[general]` +
       sekce podle domény školy) – v Go půjde načíst pomocí
       `github.com/BurntSushi/toml` beze změny formátu pro uživatele.
 - [x] Vyextrahovat JSON tvary odpovědí Bakalářů (login, timetable,

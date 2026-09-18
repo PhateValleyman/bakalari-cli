@@ -86,6 +86,7 @@ grep -Fq 'name = "Edited Name"' "$CONFIG"
 grep -Fq 'class = "4.A"' "$CONFIG"
 grep -Fq 'M = 226' "$CONFIG"
 grep -Fq 'user02 = "edited-profile"' "$CONFIG"
+grep -Fq $'\033[48;5;226m' "$TMP_DIR/config.out"
 
 GLOBAL_INPUT=$'global\n1\n/tmp/custom-cache\n3\n227\nq\n'
 printf "%s" "$GLOBAL_INPUT" | "$ROOT_DIR/bakalari-cli" config >"$TMP_DIR/config-global.out"
