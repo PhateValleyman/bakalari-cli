@@ -63,14 +63,14 @@ grep -Fq 'token = "test-token"' "$CONFIG"
 grep -Fq $'\033[48;5;226m' "$ROZVRH_OUTPUT"
 grep -Fq $'\033[48;5;135m' "$ROZVRH_OUTPUT"
 
-"$ROOT_DIR/ukoly.sh" --school mock.bakalari.test >"$UKOLY_OUTPUT"
+"$ROOT_DIR/ukoly.sh" --user mock >"$UKOLY_OUTPUT"
 grep -Fq "Smoke test" "$UKOLY_OUTPUT"
 
-"$ROOT_DIR/znamky.sh" --school mock.bakalari.test >"$ZNAMKY_OUTPUT"
+"$ROOT_DIR/znamky.sh" --user mock >"$ZNAMKY_OUTPUT"
 grep -Fq "Smoke" "$ZNAMKY_OUTPUT"
 grep -Fq "1,50" "$ZNAMKY_OUTPUT"
 
-"$ROOT_DIR/absence.sh" --school mock.bakalari.test >"$ABSENCE_OUTPUT"
+"$ROOT_DIR/absence.sh" --user mock >"$ABSENCE_OUTPUT"
 grep -Fq "zameškáno=1" "$ABSENCE_OUTPUT"
 grep -Fq "Matematika" "$ABSENCE_OUTPUT"
 
@@ -79,7 +79,7 @@ kill "$SERVER_PID"
 wait "$SERVER_PID" 2>/dev/null || true
 SERVER_PID=""
 
-"$ROOT_DIR/rozvrh.sh" --school mock.bakalari.test >"$TMP_DIR/rozvrh-offline.out" 2>"$TMP_DIR/rozvrh-offline.err"
+"$ROOT_DIR/rozvrh.sh" --user mock >"$TMP_DIR/rozvrh-offline.out" 2>"$TMP_DIR/rozvrh-offline.err"
 grep -Fq "08:00" "$TMP_DIR/rozvrh-offline.out"
 grep -Fq "používám uložený rozvrh" "$TMP_DIR/rozvrh-offline.err"
 
