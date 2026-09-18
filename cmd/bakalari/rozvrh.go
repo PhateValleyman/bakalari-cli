@@ -53,7 +53,12 @@ var rozvrhCmd = &cobra.Command{
 
 			timetable, err = client.FetchTimetable()
 			if err != nil {
-				log.Fatalf("Failed to fetch timetable: %v", err)
+				if cached, cacheErr := client.LoadCachedTimetable(); cacheErr == nil {
+					log.Printf("Warning: using cached timetable: %v", err)
+					timetable = cached
+				} else {
+					log.Fatalf("Failed to fetch timetable: %v", err)
+				}
 			}
 		}
 
