@@ -8,14 +8,30 @@
 # BAKALARI_CONFIG can explicitly override both locations.
 
 [general]
-# Bakalari hostname without "https://".
-school = "zssumava.bakalari.cz"
+# Active user profiles. Add user02, user03, ... as needed.
+user01 = "dzonny"
+# user02 = "johnny"
 
+# The section name must match the value of user01/user02/... above.
+[dzonny]
+host  = "zssumava.bakalari.cz"
+user  = "your_username"
+pass  = "your_password"
 # Number of timetable lessons to display.
 max_hours = 6
+# This will be filled and refreshed automatically after login.
+token = "your_token"
+name  = "your_name"
+class = "your_class"
 
-# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
-# cache_dir = "/custom/path/bakalari"
+# [johnny]
+# host  = "another-school.bakalari.cz"
+# user  = "your_username"
+# pass  = "your_password"
+# max_hours = 6
+# token = ""
+# name = "your_name"
+# class = "your_class"
 
 [colors]
 # Optional ANSI 256-color palette for timetable subjects.
@@ -29,10 +45,5 @@ Vv  = 44
 Pč  = 160
 Tv  = 170
 
-# The section name must match the "school" value above.
-[zssumava.bakalari.cz]
-user  = "your_username"
-pass  = "your_password"
-
-# TOKEN is filled and refreshed automatically after login.
-TOKEN = ""
+# Optional local cache directory. Empty = ${XDG_CACHE_HOME:-$HOME/.cache}/bakalari.
+# cache_dir = "/custom/path/bakalari"
