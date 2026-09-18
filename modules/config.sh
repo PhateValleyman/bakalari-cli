@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 PROFILE=""
 NEW_PROFILE=0
+SCOPE=""
 FIELDS=(host user pass max_hours name class color_Hv color_M color_Čj color_Prv color_Vv color_Pč color_Tv)
 LABELS=("Host" "Uživatel" "Heslo" "Hodin rozvrhu" "Jméno" "Třída"
     "Barva Hv" "Barva M" "Barva Čj" "Barva Prv" "Barva Vv" "Barva Pč" "Barva Tv")
@@ -21,6 +22,7 @@ usage() {
     usage_section "Volby:"
     usage_option "--user PROFILE" "Upravit konkrétní profil"
     usage_option "--new" "Vytvořit nový profil"
+    usage_option "--global" "Upravit globální nastavení"
     usage_option "--help" "Zobrazit tuto nápovědu"
     printf '\nEditor zobrazuje vlevo položky a vpravo jejich hodnoty. Gum je volitelný.\n'
 }
@@ -31,6 +33,7 @@ while [[ $# -gt 0 ]]; do
         --user) [[ $# -ge 2 ]] || exit "$EXIT_CONFIG"; PROFILE="$2"; shift 2 ;;
         --user=*) PROFILE="${1#*=}"; shift ;;
         --new) NEW_PROFILE=1; shift ;;
+        --global) SCOPE="global"; shift ;;
         *) log_error "Neznámý argument: $1"; usage >&2; exit "$EXIT_CONFIG" ;;
     esac
 done
@@ -70,6 +73,115 @@ select_profile() {
         printf '%s' "$PROFILE"
     fi
 }
+
+select_scope() {
+    if command -v gum >/dev/null 2>&1; then
+        gum choose --header "Co chceš upravit?" users global
+    else
+        printf '1) users - profily uživatelů\n2) global - barvy a cache\nVolba [1]: ' >&2
+        read -r choice
+        [[ "$choice" == 2 || "$choice" == global ]] && printf 'global' || printf 'users'
+    fi
+}
+
+if [[ -z "$SCOPE" ]]; then
+    if (( NEW_PROFILE )) || [[ -n "$PROFILE" ]]; then
+        SCOPE="users"
+    else
+        SCOPE="$(select_scope)"
+    fi
+fi
+
+edit_global() {
+    local -a global_fields=("cache_dir" "color_Hv" "color_M" "color_Čj" "color_Prv" "color_Vv" "color_Pč" "color_Tv")
+    local -a global_labels=("Cache složka" "Barva Hv" "Barva M" "Barva Čj" "Barva Prv" "Barva Vv" "Barva Pč" "Barva Tv")
+    local -A global_values=()
+    local i field value choice new_value
+    global_values[cache_dir]="$(config_value general cache_dir)"
+    for subject in Hv M Čj Prv Vv Pč Tv; do
+        global_values[color_$subject]="$(subject_color "$subject" "")"
+    done
+
+    while :; do
+        printf '\n%s%-4s %-18s %s%s\n' "$C_BOLD" "#" "Položka" "Hodnota" "$C_RESET"
+        printf '%s\n' '------------------------------------------------------------'
+        for i in "${!global_fields[@]}"; do
+            field="${global_fields[i]}"
+            value="${global_values[$field]:-}"
+            [[ -z "$value" ]] && value="-"
+            printf '%-4s %-18s %s\n' "$((i + 1))" "${global_labels[i]}" "$value"
+        done
+        printf '%s\n' ' q   Uložit a skončit'
+        if command -v gum >/dev/null 2>&1; then
+            choice="$(printf '%s\n' "${global_labels[@]}" 'Uložit a skončit' | gum choose --header 'Upravit položku')"
+            [[ "$choice" == "Uložit a skončit" ]] && break
+            for i in "${!global_labels[@]}"; do
+                if [[ "${global_labels[i]}" == "$choice" ]]; then
+                    field="${global_fields[i]}"
+                    new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
+                    global_values[$field]="$new_value"
+                fi
+            done
+        else
+            printf 'Položka: ' >&2
+            read -r choice
+            [[ "$choice" == q || "$choice" == Q ]] && break
+            if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#global_fields[@]} )); then
+                i=$((choice - 1))
+                field="${global_fields[i]}"
+                new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
+                global_values[$field]="$new_value"
+            else
+                log_warn "Zadej číslo 1-${#global_fields[@]} nebo q."
+            fi
+        fi
+    done
+
+    if [[ -n "${global_values[cache_dir]}" ]]; then
+        update_config_key general cache_dir "${global_values[cache_dir]}"
+    fi
+    for subject in Hv M Čj Prv Vv Pč Tv; do
+        value="${global_values[color_$subject]:-}"
+        [[ -z "$value" || "$value" =~ ^[0-9]+$ ]] && [[ -z "$value" || "$value" -le 255 ]] ||
+            { log_error "Barva $subject musí být číslo 0-255."; return "$EXIT_CONFIG"; }
+        [[ -n "$value" ]] && update_config_key colors "$subject" "$value"
+    done
+    log_ok "Globální konfigurace byla uložena do $BAKALARI_CONFIG"
+}
+
+update_config_key() {
+    local section="$1" key="$2" value="$3" tmp
+    tmp="$(mktemp "${BAKALARI_CONFIG}.tmp.XXXXXX")" || return 1
+    awk -v section="$section" -v key="$key" -v value="$value" '
+        function emit() {
+            if (section == "colors") print key " = " value
+            else print key " = \"" value "\""
+            done=1
+        }
+        {
+            header=$0
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
+        }
+        header == "[" section "]" { insec=1; found=1; print; next }
+        insec && $1 == key { emit(); next }
+        substr(header, 1, 1) == "[" {
+            if (insec && !done) emit()
+            insec=0
+        }
+        { print }
+        END {
+            if (insec && !done) emit()
+            if (!found) { print ""; print "[" section "]"; emit() }
+        }
+    ' "$BAKALARI_CONFIG" >"$tmp" || { rm -f "$tmp"; return 1; }
+    chmod 600 "$tmp" 2>/dev/null || true
+    mv -f "$tmp" "$BAKALARI_CONFIG"
+}
+
+if [[ "$SCOPE" == "global" ]]; then
+    edit_global
+    exit "$?"
+fi
 
 if (( NEW_PROFILE )); then
     PROFILE="$(input_value "Nový profil")"

@@ -86,6 +86,16 @@ cache_load_valid() {
     printf '%s' "$data"
 }
 
+configure_cache_dir() {
+    local configured
+    if [[ "${BAKALARI_CACHE_DIR_FROM_ENV:-0}" -eq 1 ]]; then
+        return 0
+    fi
+    configured="$(config_value general cache_dir)"
+    [[ -n "$configured" ]] || configured="$(config_value "${BAKALARI_USER:-}" cache_dir)"
+    [[ -n "$configured" ]] && BAKALARI_CACHE_DIR="$configured"
+}
+
 fetch_cached_json() {
     local name="$1" url="$2" token="$3" validator="$4" data
     if data="$(fetch_json "$url" "$token" 2>/dev/null)" &&

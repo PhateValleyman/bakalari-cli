@@ -53,6 +53,7 @@ if (( LIST_USERS )); then
 fi
 
 resolve_user "$USER_OVERRIDE" || exit "$EXIT_CONFIG"
+configure_cache_dir
 
 SCHOOL="$BAKALARI_HOST"
 USERNAME="$BAKALARI_LOGIN"
