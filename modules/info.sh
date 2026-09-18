@@ -130,7 +130,13 @@ for cache_name in "$USER_CACHE" "$ABSENCE_CACHE" "$MARKS_CACHE" "$TIMETABLE_CACH
     fi
 done
 c256() { printf '\033[38;5;%sm' "$1"; }
-row() { printf '%s%-27s%s %s%s%s\n' "$(c256 "$3")" "$1" "$C_RESET" "$(c256 255)" "$2" "$C_RESET"; }
+row() {
+    local label="$1" value="$2" color="$3" width=25 pad
+    pad=$((width - ${#label}))
+    (( pad < 1 )) && pad=1
+    printf '%s%s%s%*s%s%s%s\n' \
+        "$(c256 "$color")" "$label" "$C_RESET" "$pad" "" "$(c256 255)" "$value" "$C_RESET"
+}
 
 FULL_NAME="$(printf '%s' "$USER_DATA" | jq -r '.FullName // empty')"
 FIRST_NAME="$(printf '%s' "$USER_DATA" | jq -r '.FirstName // empty')"
