@@ -103,6 +103,10 @@ Přístupový token se po prvním přihlášení uloží zpět do konfigurace a 
 
 ./rozvrh.sh --help
 ./ukoly.sh  --help
+
+# Use another configured school/account without changing [general].
+./rozvrh.sh --school another-school.example
+./ukoly.sh --school another-school.example
 ```
 
 ### Testy
