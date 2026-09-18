@@ -6,9 +6,10 @@ Malé shellové nástroje pro práci s API systému Bakaláři z terminálu / Te
 - **`ukoly.sh`** – zkontroluje nesplněné domácí úkoly a (na Androidu v Termuxu) o nich pošle notifikaci přes `termux-notification`.
 - **`znamky.sh`** – zobrazí známky a průměry.
 - **`absence.sh`** – zobrazí souhrn absence a přehled podle předmětů.
+- **`info.sh`** – zobrazí profil studenta, třídu, třídního učitele, docházku a průměry podle předmětů.
 - **`login.sh`** – interaktivně vytvoří nebo upraví profil a ověří přihlášení.
 
-Oba skripty sdílejí stejnou konfiguraci, přihlašovací logiku a barevný výstup přes `lib/common.sh`.
+Všechny skripty sdílejí stejnou konfiguraci, přihlašovací logiku a barevné pomocné funkce přes `lib/common.sh`.
 
 ## Požadavky
 
@@ -35,7 +36,7 @@ ipkg install jq curl gawk
 ```bash
 git clone https://github.com/PhateValleyman/bakalari-cli.git
 cd bakalari-cli
-chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh login.sh
+chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh info.sh login.sh
 
 mkdir -p ~/.config/bakalari-cli
 cp config.toml.example ~/.config/bakalari-cli/config.toml
