@@ -40,8 +40,8 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
 - [ ] Zafixovat formát `config.toml` tak, jak je teď (sekce `[general]` +
       sekce podle domény školy) – v Go půjde načíst pomocí
       `github.com/BurntSushi/toml` beze změny formátu pro uživatele.
-- [ ] Vyextrahovat JSON tvary odpovědí Bakalářů (login, timetable,
-      homeworks) do `docs/api-notes.md`, aby šly rovnou převést na Go
+- [x] Vyextrahovat JSON tvary odpovědí Bakalářů (login, timetable,
+      homeworks, marks, absence) do `docs/api-notes.md` jako podklad pro Go
       struktury (`struct { ... }` + `json:"..."` tagy).
 - [ ] Navrhnout `internal/bakalari` balíček v Go s rozhraním, které
       odpovídá dnešním bash funkcím v `lib/common.sh`:
