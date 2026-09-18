@@ -3,34 +3,34 @@
 set -o pipefail
 set -u
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+# shellcheck source=lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
 
 usage() {
-    cat <<'EOF'
-Bakaláři CLI
-
-Použití:
-  bakalari-cli <modul> [volby]
-
-Moduly:
-  absence     Přehled absence
-  info        Informace o uživateli
-  login       Přihlášení / konfigurace
-  rozvrh      Aktuální rozvrh
-  ukoly       Domácí úkoly
-  znamky      Známky
-
-Volby:
-  --help      Zobrazit tuto nápovědu
-  --version   Zobrazit verzi
-
-Příklad:
-  bakalari-cli info
-  bakalari-cli absence --user dzonny
-
-Nápověda modulu:
-  bakalari-cli <modul> --help
-EOF
+    usage_header
+    printf '\n'
+    usage_section "Použití:"
+    printf '  %sbakalari-cli%s <modul> [volby]\n' "$C_BOLD" "$C_RESET"
+    printf '\n'
+    usage_section "Moduly:"
+    usage_item "absence" "Přehled absence"
+    usage_item "info" "Informace o uživateli"
+    usage_item "login" "Přihlášení / konfigurace"
+    usage_item "rozvrh" "Aktuální rozvrh"
+    usage_item "ukoly" "Domácí úkoly"
+    usage_item "znamky" "Známky"
+    printf '\n'
+    usage_section "Volby:"
+    usage_option "--help" "Zobrazit nápovědu"
+    usage_option "--version" "Zobrazit verzi"
+    printf '\n'
+    usage_section "Příklad:"
+    printf '  %s$ bakalari-cli info%s\n' "$C_GRAY" "$C_RESET"
+    printf '  %s$ bakalari-cli absence --user Dzonny%s\n' "$C_GRAY" "$C_RESET"
+    printf '\n'
+    usage_section "Nápověda modulu:"
+    printf '  %s$ bakalari-cli <modul> --help%s\n' "$C_GRAY" "$C_RESET"
 }
 
 version() {
