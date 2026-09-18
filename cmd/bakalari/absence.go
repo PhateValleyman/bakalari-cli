@@ -51,7 +51,12 @@ var absenceCmd = &cobra.Command{
 
 			absence, err = client.FetchAbsence()
 			if err != nil {
-				log.Fatalf("Failed to fetch absence: %v", err)
+				if cached, cacheErr := client.LoadCachedAbsence(); cacheErr == nil {
+					log.Printf("Warning: using cached data: %v", err)
+					absence = cached
+				} else {
+					log.Fatalf("Failed to fetch absence: %v", err)
+				}
 			}
 		}
 
