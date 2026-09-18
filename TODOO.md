@@ -28,8 +28,8 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 - [x] `shellcheck` do CI (GitHub Actions) + smoke test workflow – ať se regrese chytí automaticky.
 - [x] Podpora více škol/účtů zároveň: skripty podporují `--school DOMÉNA`
       (nebo `--school=DOMÉNA`) a použijí odpovídající sekci podle domény.
-- [ ] Přidat `znamky.sh` (známky) a `absence.sh` (absence) – stejný vzor
-      jako `ukoly.sh`, jen jiný endpoint a jiné `jq` mapování.
+- [x] Přidat `znamky.sh` (známky) a `absence.sh` (absence) – oba skripty
+      používají sdílený login/config vzor a API v3 endpointy.
 - [ ] Sjednotit chybové kódy exit statusů (dnes všude `exit 1`; do budoucna
       rozlišit např. 2 = chybí config, 3 = chyba sítě, 4 = neplatná data).
 
