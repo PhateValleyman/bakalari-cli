@@ -170,11 +170,11 @@ func SaveToken(path, profileName, token string) error {
 			}
 			continue
 		}
-		if !inProfile || !strings.HasPrefix(trimmed, "token") {
+		if !inProfile {
 			continue
 		}
 		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
+		if len(parts) != 2 || strings.TrimSpace(parts[0]) != "token" {
 			continue
 		}
 		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
