@@ -84,7 +84,7 @@ require_config() {
 }
 
 config_value() {
-    local section="$1" key="$2"
+    local section="${1:-}" key="${2:-}"
     local rsection="${section//./\\.}"
     awk -F '=' -v section="$rsection" -v key="$key" '
         $0 ~ "^\\[" section "\\][[:space:]]*$" { insec=1; next }
@@ -98,6 +98,70 @@ config_value() {
             exit
         }
     ' "$BAKALARI_CONFIG" 2>/dev/null
+}
+
+# Resolve a user profile. With no argument, use the first configured userNN entry.
+resolve_user() {
+    local requested="${1:-}" key value
+    if [[ -n "$requested" ]]; then
+        BAKALARI_USER="$requested"
+    else
+        BAKALARI_USER="$(
+            awk -F '=' '
+                /^[[:space:]]*user[0-9]+[[:space:]]*=/ {
+                    key=$1
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+                    sub(/^user/, "", key)
+                    if (key ~ /^[0-9]+$/) printf "%010d\t%s\n", key, $2
+                }
+            ' "$BAKALARI_CONFIG" | sort -n | head -n 1 | cut -f2- |
+            sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//'
+        )"
+    fi
+    if [[ -z "$BAKALARI_USER" ]]; then
+        log_error "V [general] není nakonfigurován žádný userNN."
+        return "$EXIT_CONFIG"
+    fi
+    for key in host user pass token name class max_hours; do
+        value="$(config_value "$BAKALARI_USER" "$key")"
+        printf -v "BAKALARI_${key^^}" '%s' "$value"
+    done
+    [[ -n "$BAKALARI_HOST" ]] || { log_error "V konfiguraci chybí "host" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
+    [[ -n "$BAKALARI_USER_NAME" ]] || { log_error "V konfiguraci chybí "user" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
+    [[ -n "$BAKALARI_PASS" ]] || { log_error "V konfiguraci chybí "pass" v [$BAKALARI_USER]."; return "$EXIT_CONFIG"; }
+    return 0
+}
+
+list_users() {
+    awk -F '=' '
+        /^[[:space:]]*user[0-9]+[[:space:]]*=/ {
+            key=$1
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+            sub(/^user/, "", key)
+            value=$2
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            gsub(/^"|"$/, "", value)
+            printf "%s\t%s\n", key, value
+        }
+    ' "$BAKALARI_CONFIG" | sort -n
+}
+
+save_token() {
+    local section="$1" token="$2" tmp
+    local rsection="${section//./\\.}"
+    tmp="$(mktemp)" || return 1
+    awk -v section="$rsection" -v token="$token" '
+        $0 ~ "^\\[" section "\\][[:space:]]*$" { insec=1; print; next }
+        /^\[/ { insec=0 }
+        insec && /^[[:space:]]*token[[:space:]]*=/ {
+            print "token = \"" token "\""
+            found=1
+            next
+        }
+        { print }
+        END { if (!found) exit 2 }
+    ' "$BAKALARI_CONFIG" > "$tmp" || { rm -f "$tmp"; return 1; }
+    mv "$tmp" "$BAKALARI_CONFIG"
 }
 
 # Load a timetable subject color from [colors], returning the default when absent.
