@@ -106,7 +106,7 @@ bakalari_login() {
             --data-urlencode "grant_type=password" \
             --data-urlencode "username=$username" \
             --data-urlencode "password=$password"
-    )" || { log_error "Přihlášení k Bakalářům selhalo (síť/HTTP)."; return 1; }
+    )" || { log_error "Přihlášení k Bakalářům selhalo (síť/HTTP)."; return "$EXIT_NETWORK"; }
 
     local token
     token="$(printf '%s' "$response" | jq -r '.access_token // empty')"
