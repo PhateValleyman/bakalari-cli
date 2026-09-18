@@ -110,6 +110,8 @@ USER_DATA="$(load_data "$USER_CACHE" "$USER_URL" 'type == "object"' 1)" || {
 ABSENCE_DATA="$(load_data "$ABSENCE_CACHE" "$ABSENCE_URL" 'type == "object" and (.Absences | type == "array")' 0)"
 MARKS_DATA="$(load_data "$MARKS_CACHE" "$MARKS_URL" 'type == "object" and (.Subjects | type == "array")' 0)"
 TIMETABLE_DATA="$(load_data "$TIMETABLE_CACHE" "$TIMETABLE_URL" 'type == "object" and (.Days | type == "array") and (.Teachers | type == "array")' 0)"
+printf '%s' "$ABSENCE_DATA" | jq -e 'type == "object" and (.Absences | type == "array")' >/dev/null 2>&1 || ABSENCE_DATA='{"Absences":[],"AbsencesPerSubject":[]}'
+printf '%s' "$MARKS_DATA" | jq -e 'type == "object" and (.Subjects | type == "array")' >/dev/null 2>&1 || MARKS_DATA='{"Subjects":[]}'
 
 for cache_name in "$USER_CACHE" "$ABSENCE_CACHE" "$MARKS_CACHE" "$TIMETABLE_CACHE"; do
     stamp="$(cache_stamp_load "$cache_name" 2>/dev/null || true)"
