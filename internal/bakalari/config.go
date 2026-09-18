@@ -105,6 +105,38 @@ func LoadConfig(path string) (*Config, error) {
 	return config, nil
 }
 
+// ResolveUser returns the profile name and the profile itself for the requested user.
+// If requested is empty, it returns the first userNN from [general].
+func (c *Config) ResolveUser(requested string) (string, Profile, error) {
+	profileName := requested
+	if profileName == "" {
+		// Find first userNN (numerically sorted)
+		var firstKey string
+		var minIndex int = -1
+
+		for k, v := range c.General.Users {
+			var index int
+			fmt.Sscanf(k, "user%d", &index)
+			if minIndex == -1 || index < minIndex {
+				minIndex = index
+				firstKey = v
+			}
+		}
+		profileName = firstKey
+	}
+
+	if profileName == "" {
+		return "", Profile{}, fmt.Errorf("no user profile found")
+	}
+
+	profile, ok := c.Profiles[profileName]
+	if !ok {
+		return "", Profile{}, fmt.Errorf("profile %s not found", profileName)
+	}
+
+	return profileName, profile, nil
+}
+
 // SaveToken updates the token for a specific profile in the config file.
 func SaveToken(path, profileName, token string) error {
 	// In a real implementation, we'd use a TOML library that preserves comments

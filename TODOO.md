@@ -57,14 +57,15 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
 - [x] Zvolit CLI framework (`cobra` nebo `urfave/cli`) tak, aby
       `bakalari rozvrh` a `bakalari ukoly` byly subpříkazy jednoho binárku,
       ne dva samostatné skripty.
-- [ ] Barevný výstup v Go přes `fatih/color` nebo `lipgloss` – zachovat
+- [x] Barevný výstup v Go přes `fatih/color` nebo `lipgloss` – zachovat
       stejnou barevnou paletu předmětů jako dnes v `awk` části `rozvrh.sh`.
 - [ ] Cross-compile pro `arm64` (Redmi Note 11, Shield tablet) a `mipsel`
       (ZyXEL NSA320) – ověřit, že binárka bez problémů běží i na starším
       Android 5.1 / ffp.
-- [ ] Až bude Go verze na paritě s bash verzí (rozvrh + úkoly + notifikace),
+- [/] Až bude Go verze na paritě s bash verzí (rozvrh + úkoly + notifikace),
       bash skripty přesunout do `legacy/` a `README.md` přepsat na Go verzi
       jako primární.
+      (Aktuálně implementováno: rozvrh, úkoly, známky, absence, info, cache)
 
 ## Nápady (bez závazku)
 

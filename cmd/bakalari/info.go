@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -9,9 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rozvrhCmd = &cobra.Command{
-	Use:   "rozvrh",
-	Short: "Show timetable",
+var infoCmd = &cobra.Command{
+	Use:   "info",
+	Short: "Show student info",
 	Run: func(cmd *cobra.Command, args []string) {
 		configPath := configFile
 		if configPath == "" {
@@ -31,27 +30,28 @@ var rozvrhCmd = &cobra.Command{
 		client := bakalari.NewClient(profile.Host)
 		client.Token = profile.Token
 
-		timetable, err := client.FetchTimetable()
+		userInfo, err := client.FetchUserInfo()
 		if err != nil {
-			// Try to login if token fails
 			err = client.Login(profile.User, profile.Pass)
 			if err != nil {
 				log.Fatalf("Login failed: %v", err)
 			}
-			// Update token in config (in memory for now, save later)
 			profile.Token = client.Token
 			cfg.Profiles[profileName] = profile
 
-			timetable, err = client.FetchTimetable()
+			userInfo, err = client.FetchUserInfo()
 			if err != nil {
-				log.Fatalf("Failed to fetch timetable: %v", err)
+				log.Fatalf("Failed to fetch user info: %v", err)
 			}
 		}
 
-		bakalari.RenderTimetable(timetable, profile.MaxHours, cfg.Colors)
+		absence, _ := client.FetchAbsence()
+		marks, _ := client.FetchMarks()
+
+		bakalari.RenderInfo(userInfo, absence, marks)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(rozvrhCmd)
+	rootCmd.AddCommand(infoCmd)
 }
