@@ -28,10 +28,14 @@ func RenderMarks(data *MarksResponse) {
 				newMark = color.New(color.FgHiRed, color.Bold).Sprint("  *NOVÁ*")
 			}
 			
-			fmt.Printf("  %-2s  %-20s  %-10s  váha: %d%s\n", 
+			date := m.Date
+			if len(date) > 10 {
+				date = date[:10]
+			}
+			fmt.Printf("  %-2s  %-20s  %-10s  váha: %d%s\n",
 				color.New(color.FgYellow).Sprint(markText),
 				m.Caption,
-				m.Date[:10],
+				date,
 				m.Weight,
 				newMark)
 		}
