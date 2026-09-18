@@ -62,17 +62,29 @@ if [[ -z "$FIRST_NAME" || -z "$LAST_NAME" ]]; then
     NAME_PART="${FULL_NAME%%,*}"
     FULL_CLASS="${FULL_NAME#*,}"
     if [[ "$FULL_NAME" == *,* && -z "$CLASS_NAME" ]]; then
-        CLASS_NAME="${FULL_CLASS#"${FULL_CLASS%%[![:space:]]*}"}"
+        CLASS_NAME="$(printf '%s' "$FULL_CLASS" | sed 's/^[[:space:]]*//')"
     fi
-    LAST_NAME="$(printf "%s" "$NAME_PART" | awk "{print \\$1}")"
-    FIRST_NAME="$(printf "%s" "$NAME_PART" | awk '{\$1=""; sub(/^ /,""); print}')"
+    LAST_NAME="$(printf '%s' "$NAME_PART" | awk '{print $1}')"
+    FIRST_NAME="$(printf '%s' "$NAME_PART" | awk '{$1=""; sub(/^ /,""); print}')"
 fi
 [[ -n "$FULL_NAME" ]] || FULL_NAME="$FIRST_NAME $LAST_NAME"
 [[ -n "$CLASS_NAME" ]] || CLASS_NAME="${BAKALARI_CLASS:--}"
 [[ -n "$CLASS_TEACHER" ]] || CLASS_TEACHER="-"
 
 read -r ABS_TOTAL ABS_UNSOLVED ABS_EXCUSED <<EOF
-$(printf '%s' "$ABSENCE_DATA" | jq -r '[.Absences[]?] | {total:(map(.Missed // 0)|add // 0), unsolved:(map(.Unsolved // 0)|add // 0)} | "\(.total) \(.unsolved) \((.total-.unsolved)|if . < 0 then 0 else . end)"')
+$(printf '%s' "$ABSENCE_DATA" | jq -r '
+    . as $d
+    | ($d.AbsencesPerSubject // []) as $by_subject
+    | ($d.Absences // []) as $absences
+    | {
+        total: (if ($by_subject | length) > 0
+                then ($by_subject | map(.Base // .Missed // 0) | add // 0)
+                else ($absences | map(.Missed // 0) | add // 0)
+                end),
+        unsolved: ($absences | map(.Unsolved // 0) | add // 0)
+      }
+    | "\(.total) \(.unsolved) \((.total - .unsolved) | if . < 0 then 0 else . end)"
+')
 EOF
 OVERALL_AVG="$(printf '%s' "$MARKS_DATA" | jq -r '[.Subjects[]?.AverageText | select(type=="string" and length>0) | gsub(",";".") | tonumber?] | if length==0 then "-" else ((add/length)*100|round/100|tostring|gsub("\\.";",")) end')"
 
