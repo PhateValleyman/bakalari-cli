@@ -6,7 +6,7 @@ CMD_PATH=./cmd/bakalari
 all: build
 
 build:
-	go build -o $(BINARY_NAME) $(CMD_PATH)
+	go build -trimpath -x -o $(BINARY_NAME) $(CMD_PATH)
 
 clean:
 	rm -f $(BINARY_NAME)
@@ -14,11 +14,9 @@ clean:
 
 cross-compile:
 	mkdir -p bin
-	# Linux amd64
-	GOOS=linux GOARCH=amd64 go build -o bin/$(BINARY_NAME)-linux-amd64 $(CMD_PATH)
-	# Android/Linux arm64 (Termux)
-	GOOS=linux GOARCH=arm64 go build -o bin/$(BINARY_NAME)-linux-arm64 $(CMD_PATH)
-	# Linux mipsel (ZyXEL NSA320)
-	GOOS=linux GOARCH=mipsle go build -o bin/$(BINARY_NAME)-linux-mipsel $(CMD_PATH)
-	# Windows amd64
-	GOOS=windows GOARCH=amd64 go build -o bin/$(BINARY_NAME)-windows-amd64.exe $(CMD_PATH)
+	# Android arm (Tablet Termux)
+	GOOS=android GOARCH=arm GOARM=7 go build -trimpath -x -o bin/$(BINARY_NAME)-android-armv7 $(CMD_PATH)
+	# Android arm64 (Redmi Termux)
+	GOOS=android GOARCH=arm64 go build -trimpath -x-o bin/$(BINARY_NAME)-android-arm64 $(CMD_PATH)
+	# Linux marmv5 (ZyXEL NSA320)
+	GOOS=linux GOARCH=arm GOARM=5 go build -trimpath -x -o bin/$(BINARY_NAME)-linux-armv5 $(CMD_PATH)

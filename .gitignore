@@ -2,3 +2,4 @@
 config.toml
 *.log
 .DS_Store
+vendor/
