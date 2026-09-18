@@ -83,12 +83,41 @@ fetch_timetable() {
     fetch_json "$TIMETABLE_URL" "$TOKEN"
 }
 
-# Try the stored token first; refresh it automatically when it is missing or invalid.
-if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_timetable 2>/dev/null)"; then
-    TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")" || exit "$?"
-    save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
-    if ! DATA="$(fetch_timetable)"; then
-        log_error "Požadavek na rozvrh selhal i po přihlášení."
+CACHE_NAME="timetable-$SCHOOL.json"
+
+valid_timetable() {
+    jq -e '
+        type == "object"
+        and (.Days | type == "array")
+        and (.Hours | type == "array")
+        and (.Subjects | type == "array")
+    ' >/dev/null 2>&1
+}
+
+DATA=""
+ONLINE=0
+
+# Use the stored token first. If the device is offline, continue with the local cache.
+if [[ -n "$TOKEN" ]] && DATA="$(fetch_timetable 2>/dev/null)" && printf '%s' "$DATA" | valid_timetable; then
+    ONLINE=1
+else
+    if TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD" 2>/dev/null)"; then
+        save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
+        if DATA="$(fetch_timetable 2>/dev/null)" && printf '%s' "$DATA" | valid_timetable; then
+            ONLINE=1
+        fi
+    fi
+fi
+
+if (( ONLINE )); then
+    if ! cache_save "$CACHE_NAME" "$DATA"; then
+        log_warn "Nepodařilo se uložit místní cache rozvrhu."
+    fi
+else
+    if DATA="$(cache_load "$CACHE_NAME" 2>/dev/null)" && printf '%s' "$DATA" | valid_timetable; then
+        log_warn "Zařízení je offline nebo API není dostupné; používám uložený rozvrh."
+    else
+        log_error "Rozvrh není dostupný online a nebyla nalezena platná místní cache."
         exit "$EXIT_NETWORK"
     fi
 fi
@@ -98,15 +127,6 @@ if ! printf '%s' "$DATA" | jq -e . >/dev/null 2>&1; then
     exit "$EXIT_DATA"
 fi
 
-if ! printf '%s' "$DATA" | jq -e '
-    type == "object"
-    and (.Days | type == "array")
-    and (.Hours | type == "array")
-    and (.Subjects | type == "array")
-' >/dev/null 2>&1; then
-    log_error "Neočekávaná struktura JSON rozvrhu."
-    exit 1
-fi
 
 load_subject_colors
 
