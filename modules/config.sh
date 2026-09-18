@@ -14,6 +14,10 @@ SCOPE=""
 FIELDS=(host user pass max_hours name class color_Hv color_M color_Čj color_Prv color_Vv color_Pč color_Tv)
 LABELS=("Host" "Uživatel" "Heslo" "Hodin rozvrhu" "Jméno" "Třída"
     "Barva Hv" "Barva M" "Barva Čj" "Barva Prv" "Barva Vv" "Barva Pč" "Barva Tv")
+COLOR_VALUES=(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
+COLOR_NAMES=("Černá" "Červená" "Zelená" "Žlutá" "Modrá" "Fialová" "Azurová" "Bílá"
+    "Šedá" "Světle červená" "Světle zelená" "Světle žlutá" "Světle modrá"
+    "Světle fialová" "Světle azurová" "Jasně bílá")
 
 usage() {
     usage_module_header "Modul: config"
@@ -65,6 +69,56 @@ color_preview() {
     [[ "$color" =~ ^[0-9]+$ ]] || { printf '%-8s' "-"; return; }
     label="        "
     printf '\033[48;5;%sm\033[38;5;255m%s\033[0m' "$color" "$label"
+}
+
+color_text() {
+    case "$1" in
+        3|7|10|11|12|13|14|15) printf '\033[30m' ;;
+        *) printf '\033[97m' ;;
+    esac
+}
+
+select_color_value() {
+    local current="$1" i index=0 key name
+    if ! [[ -t 0 && -t 2 ]]; then
+        input_value "Barva (0-255)" "$current"
+        return
+    fi
+    for i in "${!COLOR_VALUES[@]}"; do
+        [[ "${COLOR_VALUES[i]}" == "$current" ]] && index="$i"
+    done
+    old_stty="$(stty -g)"
+    stty -echo -icanon min 1 time 0
+    trap 'stty "$old_stty" 2>/dev/null || true; printf "\033[0m\n" >&2' RETURN
+    while :; do
+        printf '\033[2J\033[H' >&2
+        printf '%sVyber barvu (↑/↓, Enter potvrdit, Esc zrušit)%s\n\n' "$C_BOLD" "$C_RESET" >&2
+        for i in "${!COLOR_VALUES[@]}"; do
+            name="${COLOR_NAMES[i]}"
+            if (( i == index )); then
+                printf '%s> \033[48;5;%sm%s %-22s \033[0m%s\n' \
+                    "$C_GREEN" "${COLOR_VALUES[i]}" "$(color_text "${COLOR_VALUES[i]}")" \
+                    "$name" "$C_RESET" >&2
+            else
+                printf '  \033[48;5;%sm%s %-22s \033[0m\n' \
+                    "${COLOR_VALUES[i]}" "$(color_text "${COLOR_VALUES[i]}")" \
+                    "$name" >&2
+            fi
+        done
+        IFS= read -r -s -n1 key
+        if [[ "$key" == $'\e' ]]; then
+            IFS= read -r -s -n2 key
+            case "$key" in
+                '[A') if (( index > 0 )); then ((index--)); fi ;;
+                '[B') if (( index < ${#COLOR_VALUES[@]} - 1 )); then ((index++)); fi ;;
+                '') stty "$old_stty"; trap - RETURN; return 1 ;;
+            esac
+        elif [[ "$key" == $'\n' || "$key" == $'\r' ]]; then
+            stty "$old_stty"; trap - RETURN
+            printf '%s' "${COLOR_VALUES[index]}"
+            return 0
+        fi
+    done
 }
 
 show_color_values() {
@@ -154,7 +208,11 @@ edit_global() {
                 if [[ "$choice" == "${global_labels[i]}"* ]]; then
                     selected="$i"
                     field="${global_fields[i]}"
-                    new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
+                    if [[ "$field" == color_* ]]; then
+                        new_value="$(select_color_value "${global_values[$field]:-}")"
+                    else
+                        new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
+                    fi
                     global_values[$field]="$new_value"
                 fi
             done
@@ -182,7 +240,11 @@ edit_global() {
                 i=$((choice - 1))
                 selected="$i"
                 field="${global_fields[i]}"
-                new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
+                if [[ "$field" == color_* ]]; then
+                    new_value="$(select_color_value "${global_values[$field]:-}")"
+                else
+                    new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
+                fi
                 global_values[$field]="$new_value"
             else
                 log_warn "Zadej číslo 1-${#global_fields[@]} nebo q."
@@ -291,7 +353,7 @@ edit_field() {
     field="${FIELDS[index]}"
     value="${VALUES[$field]:-}"
     if [[ "$field" == color_* ]]; then
-        new_value="$(input_value "${LABELS[index]} (0-255, prázdné = výchozí)" "$value")"
+        new_value="$(select_color_value "$value")" || return 0
         [[ -z "$new_value" || "$new_value" =~ ^[0-9]+$ ]] &&
             { [[ -z "$new_value" || "$new_value" -le 255 ]] || return 1; } ||
             return 1
