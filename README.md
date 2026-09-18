@@ -104,7 +104,7 @@ Profil lze upravit bez ruční editace TOML:
 ./bakalari-cli config --new
 ```
 
-Pokud je nainstalovaný [`gum`](https://github.com/charmbracelet/gum), použije se interaktivní výběr a formulář. Bez `gum` funguje textový fallback vhodný pro Termux. Heslo se zadává skrytě, prázdné heslo při úpravě existujícího profilu zachová původní hodnotu a token se nemění. Konfigurace se zapisuje atomicky s právy `600`.
+Editor zobrazuje tabulku se dvěma sloupci: vlevo položky, vpravo jejich aktuální hodnoty. Vybereš položku a upravíš pouze ji; změny se zapisují až po volbě `Uložit a skončit`. Pokud je nainstalovaný [`gum`](https://github.com/charmbracelet/gum), použije se interaktivní výběr, jinak funguje textový fallback vhodný pro Termux. Heslo se zadává skrytě, prázdné heslo při úpravě existujícího profilu zachová původní hodnotu a token se nemění. Editor obsahuje také barvy všech podporovaných předmětů (`0–255`) a zapisuje je do sekce `[colors]`. Konfigurace se zapisuje atomicky s právy `600`.
 
 ### Barvy předmětů
 

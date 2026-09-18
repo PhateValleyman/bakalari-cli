@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# config.sh – interactive configuration editor.
+# config.sh - tabular interactive configuration editor.
 
 set -o pipefail
 set -u
@@ -10,63 +10,49 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 PROFILE=""
 NEW_PROFILE=0
+FIELDS=(host user pass max_hours name class color_Hv color_M color_Čj color_Prv color_Vv color_Pč color_Tv)
+LABELS=("Host" "Uživatel" "Heslo" "Hodin rozvrhu" "Jméno" "Třída"
+    "Barva Hv" "Barva M" "Barva Čj" "Barva Prv" "Barva Vv" "Barva Pč" "Barva Tv")
 
 usage() {
     usage_module_header "Modul: config"
     usage_section "Použití:"
-    printf '  %sbakalari-cli config%s [volby]\n' "$C_BOLD" "$C_RESET"
-    printf '\n'
+    printf '  %sbakalari-cli config%s [volby]\n\n' "$C_BOLD" "$C_RESET"
     usage_section "Volby:"
     usage_option "--user PROFILE" "Upravit konkrétní profil"
     usage_option "--new" "Vytvořit nový profil"
     usage_option "--help" "Zobrazit tuto nápovědu"
-    printf '\n'
-    printf 'Editor používá gum, pokud je nainstalovaný; jinak textové dotazy.\n'
+    printf '\nEditor zobrazuje vlevo položky a vpravo jejich hodnoty. Gum je volitelný.\n'
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help) usage; exit 0 ;;
-        --user)
-            [[ $# -ge 2 && -n "$2" ]] || { log_error "Volba --user vyžaduje profil."; exit "$EXIT_CONFIG"; }
-            PROFILE="$2"
-            shift 2
-            ;;
-        --user=*)
-            PROFILE="${1#*=}"
-            [[ -n "$PROFILE" ]] || { log_error "Volba --user vyžaduje profil."; exit "$EXIT_CONFIG"; }
-            shift
-            ;;
+        --user) [[ $# -ge 2 ]] || exit "$EXIT_CONFIG"; PROFILE="$2"; shift 2 ;;
+        --user=*) PROFILE="${1#*=}"; shift ;;
         --new) NEW_PROFILE=1; shift ;;
         *) log_error "Neznámý argument: $1"; usage >&2; exit "$EXIT_CONFIG" ;;
     esac
 done
 
 require_cmd awk grep mktemp sed || exit "$EXIT_CONFIG"
-
-CONFIG_DIR="$(dirname -- "$BAKALARI_CONFIG")"
 if [[ ! -f "$BAKALARI_CONFIG" ]]; then
-    mkdir -p "$CONFIG_DIR" || { log_error "Nelze vytvořit adresář konfigurace: $CONFIG_DIR"; exit "$EXIT_CONFIG"; }
-    touch "$BAKALARI_CONFIG" || { log_error "Nelze vytvořit konfiguraci: $BAKALARI_CONFIG"; exit "$EXIT_CONFIG"; }
+    mkdir -p "$(dirname -- "$BAKALARI_CONFIG")" || exit "$EXIT_CONFIG"
+    touch "$BAKALARI_CONFIG" || exit "$EXIT_CONFIG"
     chmod 600 "$BAKALARI_CONFIG" 2>/dev/null || true
 fi
 
-gum_input() {
-    local prompt="$1" value="${2:-}" secret="${3:-0}"
+input_value() {
+    local label="$1" value="${2:-}" secret="${3:-0}" answer
     if command -v gum >/dev/null 2>&1; then
         if (( secret )); then
-            gum input --password --prompt "$prompt: "
+            gum input --password --prompt "$label: "
         else
-            gum input --prompt "$prompt: " --value "$value"
+            gum input --prompt "$label: " --value "$value"
         fi
     else
-        printf '%s [%s]: ' "$prompt" "$value" >&2
-        if (( secret )); then
-            read -r -s answer
-            printf '\n' >&2
-        else
-            read -r answer
-        fi
+        printf '%-18s [%s]: ' "$label" "$([[ "$secret" == 1 ]] && printf 'skryté' || printf '%s' "$value")" >&2
+        if (( secret )); then read -r -s answer; printf '\n' >&2; else read -r answer; fi
         printf '%s' "${answer:-$value}"
     fi
 }
@@ -74,54 +60,87 @@ gum_input() {
 select_profile() {
     local profiles
     profiles="$(list_users | cut -f2-)"
-    if [[ -z "$profiles" ]]; then
-        return 1
-    fi
+    [[ -n "$profiles" ]] || return 1
     if command -v gum >/dev/null 2>&1; then
-        gum choose --header "Vyber profil" <<<"$profiles"
+        gum choose --header "Profil" <<<"$profiles"
     else
         printf 'Dostupné profily:\n%s\n' "$profiles" >&2
-        printf 'Profil: '
+        printf 'Profil: ' >&2
         read -r PROFILE
         printf '%s' "$PROFILE"
     fi
 }
 
 if (( NEW_PROFILE )); then
-    PROFILE="$(gum_input "Název nového profilu" "")"
+    PROFILE="$(input_value "Nový profil")"
 elif [[ -z "$PROFILE" ]]; then
     PROFILE="$(select_profile || true)"
-    [[ -n "$PROFILE" ]] || PROFILE="$(gum_input "Název profilu" "")"
+    [[ -n "$PROFILE" ]] || PROFILE="$(input_value "Profil")"
 fi
+[[ "$PROFILE" =~ ^[A-Za-z0-9._-]+$ ]] || { log_error "Neplatný název profilu."; exit "$EXIT_CONFIG"; }
 
-[[ "$PROFILE" =~ ^[A-Za-z0-9._-]+$ ]] || {
-    log_error "Název profilu smí obsahovat pouze A-Z, a-z, 0-9, '.', '_' a '-'."
-    exit "$EXIT_CONFIG"
+declare -A VALUES=()
+VALUES[host]="$(config_value "$PROFILE" host)"
+VALUES[user]="$(config_value "$PROFILE" user)"
+VALUES[pass]="$(config_value "$PROFILE" pass)"
+VALUES[max_hours]="$(config_value "$PROFILE" max_hours)"
+VALUES[name]="$(config_value "$PROFILE" name)"
+VALUES[class]="$(config_value "$PROFILE" class)"
+VALUES[max_hours]="${VALUES[max_hours]:-6}"
+for subject in Hv M Čj Prv Vv Pč Tv; do
+    VALUES[color_$subject]="$(subject_color "$subject" "")"
+done
+
+show_table() {
+    local i field value
+    printf '\n%s%-4s %-18s %s%s\n' "$C_BOLD" "#" "Položka" "Hodnota" "$C_RESET"
+    printf '%s\n' '------------------------------------------------------------'
+    for i in "${!FIELDS[@]}"; do
+        field="${FIELDS[i]}"
+        value="${VALUES[$field]:-}"
+        [[ "$field" == "pass" ]] && value="********"
+        [[ -z "$value" ]] && value="-"
+        printf '%-4s %-18s %s\n' "$((i + 1))" "${LABELS[i]}" "$value"
+    done
+    printf '%s\n' ' q   Uložit a skončit'
 }
 
-HOST="$(config_value "$PROFILE" host)"
-LOGIN="$(config_value "$PROFILE" user)"
-PASS="$(config_value "$PROFILE" pass)"
-MAX_HOURS="$(config_value "$PROFILE" max_hours)"
-NAME="$(config_value "$PROFILE" name)"
-CLASS="$(config_value "$PROFILE" class)"
-TOKEN="$(config_value "$PROFILE" token)"
-MAX_HOURS="${MAX_HOURS:-6}"
+edit_field() {
+    local index="$1" field value new_value
+    field="${FIELDS[index]}"
+    value="${VALUES[$field]:-}"
+    if [[ "$field" == color_* ]]; then
+        new_value="$(input_value "${LABELS[index]} (0-255, prázdné = výchozí)" "$value")"
+        [[ -z "$new_value" || "$new_value" =~ ^[0-9]+$ ]] &&
+            { [[ -z "$new_value" || "$new_value" -le 255 ]] || return 1; } ||
+            return 1
+    elif [[ "$field" == pass ]]; then
+        new_value="$(input_value "Nové heslo (prázdné = zachovat)" "" 1)"
+        [[ -z "$new_value" ]] && return 0
+    else
+        new_value="$(input_value "${LABELS[index]}" "$value")"
+    fi
+    VALUES[$field]="$new_value"
+}
 
-HOST="$(gum_input "Bakaláři host" "$HOST")"
-HOST="${HOST#https://}"
-HOST="${HOST#http://}"
-HOST="${HOST%/}"
-LOGIN="$(gum_input "Uživatelské jméno" "$LOGIN")"
-NEW_PASS="$(gum_input "Heslo (prázdné = zachovat)" "" 1)"
-[[ -n "$NEW_PASS" ]] && PASS="$NEW_PASS"
-MAX_HOURS="$(gum_input "Počet hodin rozvrhu" "$MAX_HOURS")"
-NAME="$(gum_input "Jméno" "$NAME")"
-CLASS="$(gum_input "Třída" "$CLASS")"
+while :; do
+    show_table
+    if command -v gum >/dev/null 2>&1; then
+        choice="$(printf '%s\n' "${LABELS[@]}" 'Uložit a skončit' | gum choose --header 'Upravit položku')"
+        [[ "$choice" == "Uložit a skončit" ]] && break
+        for i in "${!LABELS[@]}"; do [[ "${LABELS[i]}" == "$choice" ]] && edit_field "$i"; done
+    else
+        printf 'Položka: ' >&2
+        read -r choice
+        [[ "$choice" == q || "$choice" == Q ]] && break
+        [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#FIELDS[@]} )) &&
+            edit_field "$((choice - 1))" || log_warn "Zadej číslo 1-${#FIELDS[@]} nebo q."
+    fi
+done
 
-[[ -n "$HOST" && -n "$LOGIN" ]] || { log_error "Host a uživatelské jméno jsou povinné."; exit "$EXIT_CONFIG"; }
-[[ "$MAX_HOURS" =~ ^[0-9]+$ ]] || { log_error "Počet hodin musí být celé číslo."; exit "$EXIT_CONFIG"; }
-[[ -n "$PASS" ]] || { log_error "Heslo nesmí být prázdné."; exit "$EXIT_CONFIG"; }
+[[ -n "${VALUES[host]}" && -n "${VALUES[user]}" ]] || { log_error "Host a uživatel jsou povinné."; exit "$EXIT_CONFIG"; }
+[[ "${VALUES[max_hours]}" =~ ^[0-9]+$ ]] || { log_error "Počet hodin musí být celé číslo."; exit "$EXIT_CONFIG"; }
+[[ -n "${VALUES[pass]}" ]] || { log_error "Heslo nesmí být prázdné."; exit "$EXIT_CONFIG"; }
 
 toml_escape() {
     local value="$1"
@@ -130,86 +149,61 @@ toml_escape() {
     printf '%s' "$value"
 }
 
-HOST="$(toml_escape "$HOST")"
-LOGIN="$(toml_escape "$LOGIN")"
-PASS="$(toml_escape "$PASS")"
-NAME="$(toml_escape "$NAME")"
-CLASS="$(toml_escape "$CLASS")"
-TOKEN="$(toml_escape "$TOKEN")"
-
 tmp="$(mktemp "${BAKALARI_CONFIG}.tmp.XXXXXX")" || exit "$EXIT_CONFIG"
-awk -v section="$PROFILE" -v host="$HOST" -v login="$LOGIN" -v pass="$PASS" \
-    -v max_hours="$MAX_HOURS" -v name="$NAME" -v class_name="$CLASS" -v token="$TOKEN" '
+awk -v section="$PROFILE" \
+    -v host="$(toml_escape "${VALUES[host]}")" -v login="$(toml_escape "${VALUES[user]}")" \
+    -v pass="$(toml_escape "${VALUES[pass]}")" -v max_hours="${VALUES[max_hours]}" \
+    -v name="$(toml_escape "${VALUES[name]}")" -v class_name="$(toml_escape "${VALUES[class]}")" \
+    -v token="$(config_value "$PROFILE" token)" '
     function emit() {
-        print "host = \"" host "\""
-        print "user = \"" login "\""
-        print "pass = \"" pass "\""
-        print "max_hours = " max_hours
-        print "token = \"" token "\""
-        print "name = \"" name "\""
-        print "class = \"" class_name "\""
+        print "host = \"" host "\""; print "user = \"" login "\""; print "pass = \"" pass "\""
+        print "max_hours = " max_hours; print "token = \"" token "\""
+        print "name = \"" name "\""; print "class = \"" class_name "\""
     }
-    {
-        header=$0
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
-    }
-    header == "[" section "]" {
-        insec=1
-        found=1
-        print
-        emit()
-        next
-    }
+    { header=$0; gsub(/^[[:space:]]+|[[:space:]]+$/, "", header) }
+    header == "[" section "]" { insec=1; found=1; print; emit(); next }
     insec && /^[[:space:]]*(host|user|pass|max_hours|token|name|class)[[:space:]]*=/ { next }
-    substr(header, 1, 1) == "[" {
-        insec=0
-    }
+    substr(header, 1, 1) == "[" { insec=0 }
     { print }
-    END {
-        if (!found) {
-            print ""
-            print "[" section "]"
-            emit()
-        }
-    }
+    END { if (!found) { print ""; print "[" section "]"; emit() } }
 ' "$BAKALARI_CONFIG" >"$tmp" || { rm -f "$tmp"; exit "$EXIT_CONFIG"; }
 chmod 600 "$tmp" 2>/dev/null || true
-mv -f "$tmp" "$BAKALARI_CONFIG" || { rm -f "$tmp"; exit "$EXIT_CONFIG"; }
+mv -f "$tmp" "$BAKALARI_CONFIG" || exit "$EXIT_CONFIG"
 
-if ! awk -F '=' -v profile="$PROFILE" '
-    /^[[:space:]]*user[0-9]+[[:space:]]*=/ {
-        value=$2
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
-        gsub(/^"|"$/, "", value)
-        if (value == profile) found=1
-    }
-    END { exit(found ? 0 : 1) }
-' "$BAKALARI_CONFIG"; then
-    num="$(awk -F '=' '
-        /^[[:space:]]*user[0-9]+[[:space:]]*=/ {
-            key=$1
-            gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
-            sub(/^user/, "", key)
-            if (key ~ /^[0-9]+$/ && key + 0 > max) max=key + 0
+for subject in Hv M Čj Prv Vv Pč Tv; do
+    value="${VALUES[color_$subject]:-}"
+    if [[ -z "$value" ]]; then
+        continue
+    fi
+    tmp="$(mktemp "${BAKALARI_CONFIG}.tmp.XXXXXX")" || exit "$EXIT_CONFIG"
+    awk -v key="$subject" -v value="$value" '
+        /^[[:space:]]*\[colors\][[:space:]]*$/ { insec=1; found=1; print; next }
+        /^[[:space:]]*\[/ {
+            if (insec && !done) { print key " = " value; done=1 }
+            insec=0
         }
-        END { printf "%02d", max + 1 }
-    ' "$BAKALARI_CONFIG")"
+        insec && $1 == key { print key " = " value; done=1; next }
+        { print }
+        END {
+            if (insec && !done) print key " = " value
+            if (!found) { print ""; print "[colors]"; print key " = " value }
+        }
+    ' "$BAKALARI_CONFIG" >"$tmp" || { rm -f "$tmp"; exit "$EXIT_CONFIG"; }
+    chmod 600 "$tmp" 2>/dev/null || true
+    mv -f "$tmp" "$BAKALARI_CONFIG" || exit "$EXIT_CONFIG"
+done
+
+if ! grep -Eq "^[[:space:]]*user[0-9]+[[:space:]]*=[[:space:]]*\"$PROFILE\"" "$BAKALARI_CONFIG"; then
+    num="$(list_users | awk -F '\t' 'BEGIN { max=0 } $1 + 0 > max { max=$1 } END { printf "%02d", max + 1 }')"
     tmp="$(mktemp "${BAKALARI_CONFIG}.tmp.XXXXXX")" || exit "$EXIT_CONFIG"
     if grep -Eq '^[[:space:]]*\[general\][[:space:]]*$' "$BAKALARI_CONFIG"; then
-        awk -v key="user$num" -v profile="$PROFILE" '
-            /^[[:space:]]*\[general\][[:space:]]*$/ {
-                print
-                printf "%s = \"%s\"\n", key, profile
-                next
-            }
-            { print }
-        ' "$BAKALARI_CONFIG" >"$tmp"
+        awk -v key="user$num" -v profile="$PROFILE" '/^[[:space:]]*\[general\][[:space:]]*$/ { print; printf "%s = \"%s\"\n", key, profile; next } { print }' "$BAKALARI_CONFIG" >"$tmp"
     else
         { printf '[general]\nuser%s = "%s"\n\n' "$num" "$PROFILE"; cat "$BAKALARI_CONFIG"; } >"$tmp"
     fi
     chmod 600 "$tmp" 2>/dev/null || true
-    mv -f "$tmp" "$BAKALARI_CONFIG" || { rm -f "$tmp"; exit "$EXIT_CONFIG"; }
+    mv -f "$tmp" "$BAKALARI_CONFIG" || exit "$EXIT_CONFIG"
 fi
 
-unset PASS NEW_PASS TOKEN
+unset VALUES PASS TOKEN
 log_ok "Profil [$PROFILE] byl uložen do $BAKALARI_CONFIG"
