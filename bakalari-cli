@@ -16,6 +16,7 @@ usage() {
     usage_section "Moduly:"
     usage_item "absence" "Přehled absence"
     usage_item "cache" "Správa lokální cache"
+    usage_item "config" "Interaktivní konfigurace"
     usage_item "info" "Informace o uživateli"
     usage_item "login" "Přihlášení / konfigurace"
     usage_item "rozvrh" "Aktuální rozvrh"
@@ -35,7 +36,7 @@ usage() {
 }
 
 version() {
-    printf '%s\n' "bakalari-cli 0.2.0"
+    printf '%s\n' "bakalari-cli 0.3.0"
 }
 
 show_home() {
@@ -65,7 +66,7 @@ case "$1" in
     --version)
         version
         ;;
-    absence|cache|info|login|rozvrh|ukoly|znamky)
+    absence|cache|config|info|login|rozvrh|ukoly|znamky)
         module="$1"
         shift
         exec bash "$SCRIPT_DIR/modules/$module.sh" "$@"

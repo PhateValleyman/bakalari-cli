@@ -76,9 +76,19 @@ grep -Fq "Neomluvené / nevyřešené:" "$TMP_DIR/info.out"
 grep -Fq "Matematika" "$TMP_DIR/info.out"
 grep -Fq "1,50" "$TMP_DIR/info.out"
 
+CONFIG_INPUT=$'edited-profile\nedited-school\nedited-user\nedited-pass\n4\nEdited Name\n4.A\n'
+printf "%s" "$CONFIG_INPUT" | "$ROOT_DIR/bakalari-cli" config --new >"$TMP_DIR/config.out"
+grep -Fq '[edited-profile]' "$CONFIG"
+grep -Fq 'host = "edited-school"' "$CONFIG"
+grep -Fq 'user = "edited-user"' "$CONFIG"
+grep -Fq 'pass = "edited-pass"' "$CONFIG"
+grep -Fq 'name = "Edited Name"' "$CONFIG"
+grep -Fq 'class = "4.A"' "$CONFIG"
+grep -Fq 'user02 = "edited-profile"' "$CONFIG"
+
 LOGIN_INPUT=$'login-test-school\ntest-user\ntest-pass\n2\n'
 printf "%s" "$LOGIN_INPUT" | "$ROOT_DIR/bakalari-cli" login --user login-test >"$TMP_DIR/login.out"
-grep -Fq 'user02 = "login-test"' "$CONFIG"
+grep -Fq 'user03 = "login-test"' "$CONFIG"
 grep -Fq '[login-test]' "$CONFIG"
 grep -Fq 'token = "test-token"' "$CONFIG"
 
@@ -128,4 +138,6 @@ printf 'OK: offline cache smoke test\n'
 "$ROOT_DIR/bakalari-cli" --help >"$TMP_DIR/cli-help.out"
 grep -Fq "Bakaláři CLI" "$TMP_DIR/cli-help.out"
 grep -Fq "absence" "$TMP_DIR/cli-help.out"
-"$ROOT_DIR/bakalari-cli" --version | grep -Fq "bakalari-cli 0.2.0"
+"$ROOT_DIR/bakalari-cli" config --help >"$TMP_DIR/config-help.out"
+grep -Fq "Editor používá gum" "$TMP_DIR/config-help.out"
+"$ROOT_DIR/bakalari-cli" --version | grep -Fq "bakalari-cli 0.3.0"

@@ -10,6 +10,7 @@ Hlavním vstupním bodem je **`bakalari-cli`**. Jednotlivé funkce jsou moduly C
 - **`bakalari-cli absence`** – absence.
 - **`bakalari-cli info`** – profil studenta, třída, třídní učitel, docházka a průměry.
 - **`bakalari-cli cache`** – kontrola a bezpečné vyčištění lokální cache.
+- **`bakalari-cli config`** – interaktivní editace profilů.
 - **`bakalari-cli login`** – interaktivní přihlášení a konfigurace.
 
 Samostatné skripty zůstávají jako kompatibilní wrappery. Nové funkce se přidávají jako moduly pod **`modules/`**.
@@ -92,6 +93,18 @@ Novou instalaci nebo další účet lze vytvořit bez ručního editování TOML
 ```
 
 Skript vytvoří `~/.config/bakalari-cli/config.toml`, přidá profil do `[general]` jako `userNN`, bezpečně načte heslo bez jeho zobrazení na terminálu, ověří přihlášení proti `/api/login` a uloží získaný `token`. Při použití existujícího profilu se jeho host, uživatelské jméno, heslo, počet hodin a token aktualizují.
+
+### Interaktivní konfigurace
+
+Profil lze upravit bez ruční editace TOML:
+
+```bash
+./bakalari-cli config
+./bakalari-cli config --user dzonny
+./bakalari-cli config --new
+```
+
+Pokud je nainstalovaný [`gum`](https://github.com/charmbracelet/gum), použije se interaktivní výběr a formulář. Bez `gum` funguje textový fallback vhodný pro Termux. Heslo se zadává skrytě, prázdné heslo při úpravě existujícího profilu zachová původní hodnotu a token se nemění. Konfigurace se zapisuje atomicky s právy `600`.
 
 ### Barvy předmětů
 
