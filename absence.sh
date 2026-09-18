@@ -72,7 +72,7 @@ fi
 
 printf '%s=== Absence ===%s\n' "$C_BOLD" "$C_RESET"
 
-printf '\n%s%-12s %-8s %7s %9s %7s %7s %12s%s\n' \
+printf '\n%s%-12s  %-8s  %7s  %9s  %7s  %7s  %12s%s\n' \
     "$C_BOLD" "Datum" "Den" "Hodiny" "Zameškáno" "Pozdě" "Dříve" "Nevyřešeno" "$C_RESET"
 printf '%s\n' '---------------------------------------------------------------'
 
@@ -123,7 +123,7 @@ if [[ -n "$DAILY_TOTALS" ]]; then
                 display_date="${BASH_REMATCH[3]}.${BASH_REMATCH[2]}.${BASH_REMATCH[1]}"
             fi
 
-            printf '%s%-12s %-8s %7s %9s %7s %7s %12s%s\n' \
+            printf '%s%-12s  %-8s  %7s  %9s  %7s  %7s  %12s%s\n' \
                 "$row_color" "$display_date" "$day_name" "$hours" "$missed" "$late" "$soon" "$unsolved" "$C_RESET"
         done
 else
@@ -143,6 +143,6 @@ printf '%s' "$DATA" | jq -r '
     | [.hours, .missed, .late, .soon, .unsolved]
     | @tsv
 ' | while IFS=$'\t' read -r hours missed late soon unsolved; do
-    printf '%s%-12s %-8s %7s %9s %7s %7s %12s%s\n' \
+    printf '%s%-12s  %-8s  %7s  %9s  %7s  %7s  %12s%s\n' \
         "$C_BOLD" "CELKEM" "" "$hours" "$missed" "$late" "$soon" "$unsolved" "$C_RESET"
 done
