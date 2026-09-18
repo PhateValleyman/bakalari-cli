@@ -103,22 +103,19 @@ edit_global() {
     done
 
     while :; do
-        printf '\n%s%-24s %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "$C_RESET"
-        printf '%s\n' '------------------------------------------------------------------------'
-        for i in "${!global_fields[@]}"; do
-            field="${global_fields[i]}"
-            value="${global_values[$field]:-}"
-            [[ -z "$value" ]] && value="-"
-            marker=" "
-            (( i == selected )) && marker=">"
-            printf '%s %-20s %2s %-18s %s\n' "$marker" "${global_labels[i]}" "$((i + 1))" "${global_labels[i]}" "$value"
-        done
-        printf '\n%s q%s  Uložit a skončit\n' "$C_GRAY" "$C_RESET"
         if command -v gum >/dev/null 2>&1; then
-            choice="$(printf '%s\n' "${global_labels[@]}" 'Uložit a skončit' | gum choose --header 'Upravit položku')"
+            menu_items=()
+            for i in "${!global_labels[@]}"; do
+                field="${global_fields[i]}"
+                value="${global_values[$field]:-}"
+                [[ -z "$value" ]] && value="-"
+                menu_items+=("$(printf '%-20s  %s' "${global_labels[i]}" "$value")")
+            done
+            menu_items+=("Uložit a skončit")
+            choice="$(printf '%s\n' "${menu_items[@]}" | gum choose --header 'Upravit položku')"
             [[ "$choice" == "Uložit a skončit" ]] && break
             for i in "${!global_labels[@]}"; do
-                if [[ "${global_labels[i]}" == "$choice" ]]; then
+                if [[ "$choice" == "${global_labels[i]}"* ]]; then
                     selected="$i"
                     field="${global_fields[i]}"
                     new_value="$(input_value "${global_labels[i]}" "${global_values[$field]:-}")"
@@ -126,6 +123,17 @@ edit_global() {
                 fi
             done
         else
+            printf '\n%s%-24s %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "$C_RESET"
+            printf '%s\n' '------------------------------------------------------------------------'
+            for i in "${!global_fields[@]}"; do
+                field="${global_fields[i]}"
+                value="${global_values[$field]:-}"
+                [[ -z "$value" ]] && value="-"
+                marker=" "
+                (( i == selected )) && marker=">"
+                printf '%s %-20s %2s %-18s %s\n' "$marker" "${global_labels[i]}" "$((i + 1))" "${global_labels[i]}" "$value"
+            done
+            printf '\n%s q%s  Uložit a skončit\n' "$C_GRAY" "$C_RESET"
             printf 'Položka: ' >&2
             read -r choice
             [[ "$choice" == q || "$choice" == Q ]] && break
@@ -243,17 +251,26 @@ edit_field() {
 
 selected=0
 while :; do
-    show_table "$selected"
     if command -v gum >/dev/null 2>&1; then
-        choice="$(printf '%s\n' "${LABELS[@]}" 'Uložit a skončit' | gum choose --header 'Upravit položku')"
+        menu_items=()
+        for i in "${!LABELS[@]}"; do
+            field="${FIELDS[i]}"
+            value="${VALUES[$field]:-}"
+            [[ "$field" == "pass" ]] && value="********"
+            [[ -z "$value" ]] && value="-"
+            menu_items+=("$(printf '%-20s  %s' "${LABELS[i]}" "$value")")
+        done
+        menu_items+=("Uložit a skončit")
+        choice="$(printf '%s\n' "${menu_items[@]}" | gum choose --header 'Upravit položku')"
         [[ "$choice" == "Uložit a skončit" ]] && break
         for i in "${!LABELS[@]}"; do
-            if [[ "${LABELS[i]}" == "$choice" ]]; then
+            if [[ "${choice}" == "${LABELS[i]}"* ]]; then
                 selected="$i"
                 edit_field "$i"
             fi
         done
     else
+        show_table "$selected"
         printf 'Položka: ' >&2
         read -r choice
         [[ "$choice" == q || "$choice" == Q ]] && break
