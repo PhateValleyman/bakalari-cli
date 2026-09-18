@@ -57,10 +57,15 @@ FULL_NAME="$(printf '%s' "$USER_DATA" | jq -r '.FullName // empty')"
 FIRST_NAME="$(printf '%s' "$USER_DATA" | jq -r '.FirstName // empty')"
 LAST_NAME="$(printf '%s' "$USER_DATA" | jq -r '.LastName // empty')"
 CLASS_NAME="$(printf '%s' "$USER_DATA" | jq -r '.Class.Name // .Class.Abbrev // empty')"
-CLASS_TEACHER="$(printf '%s' "$USER_DATA" | jq -r '.Class.Teacher.Name // .Class.ClassTeacher.Name // .ClassTeacher.Name // .ClassTeacher // empty')"
+CLASS_TEACHER="$(printf '%s' "$USER_DATA" | jq -r '.Class.Teacher.Name // .Class.Teacher.FullName // .Class.ClassTeacher.Name // .Class.ClassTeacher.FullName // .ClassTeacher.Name // .ClassTeacher.FullName // (if (.ClassTeacher | type) == "string" then .ClassTeacher else empty end) // empty')"
 if [[ -z "$FIRST_NAME" || -z "$LAST_NAME" ]]; then
-    FIRST_NAME="$(printf '%s' "$FULL_NAME" | awk '{print $1}')"
-    LAST_NAME="$(printf '%s' "$FULL_NAME" | awk '{$1=""; sub(/^ /,""); print}')"
+    NAME_PART="${FULL_NAME%%,*}"
+    FULL_CLASS="${FULL_NAME#*,}"
+    if [[ "$FULL_NAME" == *,* && -z "$CLASS_NAME" ]]; then
+        CLASS_NAME="${FULL_CLASS#"${FULL_CLASS%%[![:space:]]*}"}"
+    fi
+    LAST_NAME="$(printf "%s" "$NAME_PART" | awk "{print \\$1}")"
+    FIRST_NAME="$(printf "%s" "$NAME_PART" | awk '{\$1=""; sub(/^ /,""); print}')"
 fi
 [[ -n "$FULL_NAME" ]] || FULL_NAME="$FIRST_NAME $LAST_NAME"
 [[ -n "$CLASS_NAME" ]] || CLASS_NAME="${BAKALARI_CLASS:--}"
