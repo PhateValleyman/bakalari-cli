@@ -189,6 +189,22 @@ load_subject_colors() {
     SUBJECT_COLORS[Pč]="$(subject_color Pč 160)"
     SUBJECT_COLORS[Tv]="$(subject_color Tv 170)"
 }
+usage_header() {
+    printf '%s%sBakaláři CLI%s\n' "$C_BOLD" "$C_BLUE" "$C_RESET"
+}
+
+usage_section() {
+    printf '%s%s%s%s\n' "$C_BOLD" "$C_YELLOW" "$1" "$C_RESET"
+}
+
+usage_item() {
+    printf '  %s%-12s%s %s\n' "$C_GREEN" "$1" "$C_RESET" "$2"
+}
+
+usage_option() {
+    printf '  %s%-14s%s %s\n' "$C_CYAN" "$1" "$C_RESET" "$2"
+}
+
 bakalari_login() {
     local school="$1" login_url="$2" username="$3" password="$4" response
     log_info "Přihlašuji se k $school ..."
