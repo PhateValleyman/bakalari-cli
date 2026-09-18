@@ -9,6 +9,7 @@
 #
 # Proměnné prostředí:
 #   BAKALARI_CONFIG   cesta ke config.toml (výchozí: ~/.config/bakalari/config.toml)
+#   BAKALARI_BASE_URL URL API serveru pro testování
 
 set -o pipefail
 set -u
@@ -27,8 +28,9 @@ require_config || exit 1
 
 SCHOOL="$(config_value general school)"
 SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
-LOGIN_URL="https://${SCHOOL}/api/login"
-HOMEWORKS_URL="https://${SCHOOL}/api/3/homeworks"
+API_BASE_URL="${BAKALARI_BASE_URL:-https://${SCHOOL}}"
+LOGIN_URL="${API_BASE_URL}/api/login"
+HOMEWORKS_URL="${API_BASE_URL}/api/3/homeworks"
 
 USERNAME="$(config_value "$SCHOOL" user)"
 PASSWORD="$(config_value "$SCHOOL" pass)"
