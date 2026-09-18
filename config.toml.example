@@ -33,6 +33,7 @@ class = "your_class"
 # name = "your_name"
 # class = "your_class"
 
+
 [colors]
 # Optional ANSI 256-color palette for timetable subjects.
 # If a subject is missing here, rozvrh.sh uses its built-in default color.
