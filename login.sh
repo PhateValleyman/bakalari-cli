@@ -4,9 +4,9 @@
 set -o pipefail
 set -u
 
-SCRIPT_DIR="\$(cd -- "\$(dirname -- "\${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=lib/common.sh
-source "\$SCRIPT_DIR/lib/common.sh"
+source "$SCRIPT_DIR/lib/common.sh"
 
 PROFILE=""
 
@@ -23,149 +23,149 @@ Volby:
 EOF
 }
 
-while [[ \$# -gt 0 ]]; do
-	case "\$1" in
+while [[ $# -gt 0 ]]; do
+	case "$1" in
 		-h|--help)
 			usage
 			exit 0
 			;;
 		--user)
-			[[ \$# -ge 2 && -n "\$2" ]] || {
+			[[ $# -ge 2 && -n "$2" ]] || {
 				log_error "Volba --user vyžaduje název profilu."
-				exit "\$EXIT_CONFIG"
+				exit "$EXIT_CONFIG"
 			}
-			PROFILE="\$2"
+			PROFILE="$2"
 			shift 2
 			;;
 		--user=*)
-			PROFILE="\${1#*=}"
-			[[ -n "\$PROFILE" ]] || {
+			PROFILE="${1#*=}"
+			[[ -n "$PROFILE" ]] || {
 				log_error "Volba --user vyžaduje název profilu."
-				exit "\$EXIT_CONFIG"
+				exit "$EXIT_CONFIG"
 			}
 			shift
 			;;
 		*)
-			log_error "Neznámý argument: \$1"
+			log_error "Neznámý argument: $1"
 			usage
-			exit "\$EXIT_CONFIG"
+			exit "$EXIT_CONFIG"
 			;;
 	esac
 done
 
-require_cmd curl jq awk mktemp sed grep || exit "\$EXIT_CONFIG"
+require_cmd curl jq awk mktemp sed grep || exit "$EXIT_CONFIG"
 
-CONFIG_DIR="\$(dirname -- "\$BAKALARI_CONFIG")"
-if [[ ! -f "\$BAKALARI_CONFIG" ]]; then
-	mkdir -p "\$CONFIG_DIR" || {
-		log_error "Nelze vytvořit adresář konfigurace: \$CONFIG_DIR"
-		exit "\$EXIT_CONFIG"
+CONFIG_DIR="$(dirname -- "$BAKALARI_CONFIG")"
+if [[ ! -f "$BAKALARI_CONFIG" ]]; then
+	mkdir -p "$CONFIG_DIR" || {
+		log_error "Nelze vytvořit adresář konfigurace: $CONFIG_DIR"
+		exit "$EXIT_CONFIG"
 	}
-	touch "\$BAKALARI_CONFIG" || {
-		log_error "Nelze vytvořit konfiguraci: \$BAKALARI_CONFIG"
-		exit "\$EXIT_CONFIG"
+	touch "$BAKALARI_CONFIG" || {
+		log_error "Nelze vytvořit konfiguraci: $BAKALARI_CONFIG"
+		exit "$EXIT_CONFIG"
 	}
-	chmod 600 "\$BAKALARI_CONFIG" 2>/dev/null || true
+	chmod 600 "$BAKALARI_CONFIG" 2>/dev/null || true
 fi
 
-if [[ -z "\$PROFILE" ]]; then
-	printf '%sProfil Bakalářů%s\n' "\$C_BOLD" "\$C_RESET"
+if [[ -z "$PROFILE" ]]; then
+	printf '%sProfil Bakalářů%s\n' "$C_BOLD" "$C_RESET"
 	printf 'Název profilu (např. dzonny): '
 	read -r PROFILE
 fi
 
-if [[ ! "\$PROFILE" =~ ^[A-Za-z0-9._-]+\$ ]]; then
+if [[ ! "$PROFILE" =~ ^[A-Za-z0-9._-]+$ ]]; then
 	log_error "Název profilu smí obsahovat pouze A-Z, a-z, 0-9, '.', '_' a '-'."
-	exit "\$EXIT_CONFIG"
+	exit "$EXIT_CONFIG"
 fi
 
 profile_exists() {
-	awk -v section="\$PROFILE" '
-		\$0 ~ "^\\\\[" section "\\\\][[:space:]]*\$" { found=1; exit }
+	awk -v section="$PROFILE" '
+		$0 ~ "^\\\\[" section "\\\\][[:space:]]*$" { found=1; exit }
 		END { exit(found ? 0 : 1) }
-	' "\$BAKALARI_CONFIG"
+	' "$BAKALARI_CONFIG"
 }
 
 if profile_exists; then
-	log_info "Profil [\$PROFILE] již existuje; přihlašovací údaje budou aktualizovány."
-	DEFAULT_HOST="\$(config_value "\$PROFILE" host)"
-	DEFAULT_LOGIN="\$(config_value "\$PROFILE" user)"
-	DEFAULT_MAX_HOURS="\$(config_value "\$PROFILE" max_hours)"
+	log_info "Profil [$PROFILE] již existuje; přihlašovací údaje budou aktualizovány."
+	DEFAULT_HOST="$(config_value "$PROFILE" host)"
+	DEFAULT_LOGIN="$(config_value "$PROFILE" user)"
+	DEFAULT_MAX_HOURS="$(config_value "$PROFILE" max_hours)"
 else
 	DEFAULT_HOST=""
 	DEFAULT_LOGIN=""
 	DEFAULT_MAX_HOURS="6"
 fi
 
-printf 'Bakaláři host [%s]: ' "\$DEFAULT_HOST"
+printf 'Bakaláři host [%s]: ' "$DEFAULT_HOST"
 read -r HOST
-HOST="\${HOST:-\$DEFAULT_HOST}"
-HOST="\${HOST#https://}"
-HOST="\${HOST%/}"
+HOST="${HOST:-$DEFAULT_HOST}"
+HOST="${HOST#https://}"
+HOST="${HOST%/}"
 
-printf 'Uživatelské jméno [%s]: ' "\$DEFAULT_LOGIN"
+printf 'Uživatelské jméno [%s]: ' "$DEFAULT_LOGIN"
 read -r LOGIN
-LOGIN="\${LOGIN:-\$DEFAULT_LOGIN}"
+LOGIN="${LOGIN:-$DEFAULT_LOGIN}"
 
-if [[ -z "\$HOST" || -z "\$LOGIN" ]]; then
+if [[ -z "$HOST" || -z "$LOGIN" ]]; then
 	log_error "Host a uživatelské jméno jsou povinné."
-	exit "\$EXIT_CONFIG"
+	exit "$EXIT_CONFIG"
 fi
 
 printf 'Heslo: '
 read -r -s PASSWORD
 printf '\n'
 
-if [[ -z "\$PASSWORD" ]]; then
+if [[ -z "$PASSWORD" ]]; then
 	log_error "Heslo nesmí být prázdné."
 	unset PASSWORD
-	exit "\$EXIT_CONFIG"
+	exit "$EXIT_CONFIG"
 fi
 
-printf 'Počet hodin rozvrhu [%s]: ' "\$DEFAULT_MAX_HOURS"
+printf 'Počet hodin rozvrhu [%s]: ' "$DEFAULT_MAX_HOURS"
 read -r MAX_HOURS
-MAX_HOURS="\${MAX_HOURS:-\$DEFAULT_MAX_HOURS}"
+MAX_HOURS="${MAX_HOURS:-$DEFAULT_MAX_HOURS}"
 
-[[ "\$MAX_HOURS" =~ ^[0-9]+\$ ]] || {
+[[ "$MAX_HOURS" =~ ^[0-9]+$ ]] || {
 	log_error "Počet hodin musí být celé číslo."
 	unset PASSWORD
-	exit "\$EXIT_CONFIG"
+	exit "$EXIT_CONFIG"
 }
 
-printf '\n%sOvěřuji přihlášení...%s\n' "\$C_BOLD" "\$C_RESET"
+printf '\n%sOvěřuji přihlášení...%s\n' "$C_BOLD" "$C_RESET"
 
-API_BASE_URL="https://\${HOST}"
-LOGIN_URL="\$API_BASE_URL/api/login"
+API_BASE_URL="https://${HOST}"
+LOGIN_URL="$API_BASE_URL/api/login"
 
-TOKEN="\$(bakalari_login "\$PROFILE" "\$LOGIN_URL" "\$LOGIN" "\$PASSWORD")" || {
-	rc=\$?
+TOKEN="$(bakalari_login "$PROFILE" "$LOGIN_URL" "$LOGIN" "$PASSWORD")" || {
+	rc=$?
 	unset PASSWORD
-	exit "\$rc"
+	exit "$rc"
 }
 
 toml_escape() {
-	local value="\$1"
-	value="\${value//\\\\/\\\\\\\\}"
-	value="\${value//\"/\\\\\"}"
-	printf '%s' "\$value"
+	local value="$1"
+	value="${value//\\\\/\\\\\\\\}"
+	value="${value//\"/\\\\\"}"
+	printf '%s' "$value"
 }
 
-HOST_ESC="\$(toml_escape "\$HOST")"
-LOGIN_ESC="\$(toml_escape "\$LOGIN")"
-PASS_ESC="\$(toml_escape "\$PASSWORD")"
-TOKEN_ESC="\$(toml_escape "\$TOKEN")"
+HOST_ESC="$(toml_escape "$HOST")"
+LOGIN_ESC="$(toml_escape "$LOGIN")"
+PASS_ESC="$(toml_escape "$PASSWORD")"
+TOKEN_ESC="$(toml_escape "$TOKEN")"
 
 upsert_profile() {
-	local file="\$1" section="\$2" host="\$3" login="\$4" pass="\$5" max_hours="\$6" token="\$7"
+	local file="$1" section="$2" host="$3" login="$4" pass="$5" max_hours="$6" token="$7"
 	local tmp
 
-	tmp="\$(mktemp "\${file}.tmp.XXXXXX")" || return 1
+	tmp="$(mktemp "${file}.tmp.XXXXXX")" || return 1
 
-	awk -v section="\$section" \
-		-v host="\$host" -v login="\$login" -v pass="\$pass" \
-		-v max_hours="\$max_hours" -v token="\$token" '
+	awk -v section="$section" \
+		-v host="$host" -v login="$login" -v pass="$pass" \
+		-v max_hours="$max_hours" -v token="$token" '
 		BEGIN { insec=0; found=0 }
-		\$0 ~ "^\\\\[" section "\\\\][[:space:]]*\$" {
+		$0 ~ "^\\\\[" section "\\\\][[:space:]]*$" {
 			insec=1
 			found=1
 			print
@@ -196,79 +196,79 @@ upsert_profile() {
 				print "class = \\"\\\""
 			}
 		}
-	' "\$file" >"\$tmp" || {
-		rm -f "\$tmp"
+	' "$file" >"$tmp" || {
+		rm -f "$tmp"
 		return 1
 	}
 
-	chmod 600 "\$tmp" 2>/dev/null || true
-	mv -f "\$tmp" "\$file"
+	chmod 600 "$tmp" 2>/dev/null || true
+	mv -f "$tmp" "$file"
 }
 
 ensure_general_profile() {
-	local file="\$1" section="\$2" tmp num
+	local file="$1" section="$2" tmp num
 
-	if awk -F '=' -v section="\$section" '
+	if awk -F '=' -v section="$section" '
 		/^[[:space:]]*user[0-9]+[[:space:]]*=/ {
-			value=\$2
+			value=$2
 			gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
 			gsub(/^"|"$/, "", value)
 			if (value == section) found=1
 		}
 		END { exit(found ? 0 : 1) }
-	' "\$file"; then
+	' "$file"; then
 		return 0
 	fi
 
-	num="\$(awk -F '=' '
+	num="$(awk -F '=' '
 		/^[[:space:]]*user[0-9]+[[:space:]]*=/ {
-			key=\$1
+			key=$1
 			gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
 			sub(/^user/, "", key)
-			if (key ~ /^[0-9]+\$/ && key + 0 > max) max=key + 0
+			if (key ~ /^[0-9]+$/ && key + 0 > max) max=key + 0
 		}
 		END { printf "%02d", max + 1 }
-	' "\$file")"
+	' "$file")"
 
-	tmp="\$(mktemp "\${file}.tmp.XXXXXX")" || return 1
+	tmp="$(mktemp "${file}.tmp.XXXXXX")" || return 1
 
-	if grep -Eq '^[[:space:]]*\[general\][[:space:]]*\$' "\$file"; then
-		awk -v key="user\$num" -v section="\$section" '
-			/^[[:space:]]*\[general\][[:space:]]*\$/ {
+	if grep -Eq '^[[:space:]]*\[general\][[:space:]]*$' "$file"; then
+		awk -v key="user$num" -v section="$section" '
+			/^[[:space:]]*\[general\][[:space:]]*$/ {
 				print
 				print key " = \\"" section "\\""
 				next
 			}
 			{ print }
-		' "\$file" >"\$tmp"
+		' "$file" >"$tmp"
 	else
 		{
-			printf '[general]\nuser%s = "%s"\n\n' "\$num" "\$section"
-			cat "\$file"
-		} >"\$tmp"
+			printf '[general]\nuser%s = "%s"\n\n' "$num" "$section"
+			cat "$file"
+		} >"$tmp"
 	fi
 
-	chmod 600 "\$tmp" 2>/dev/null || true
-	mv -f "\$tmp" "\$file"
+	chmod 600 "$tmp" 2>/dev/null || true
+	mv -f "$tmp" "$file"
 }
 
-if ! upsert_profile "\$BAKALARI_CONFIG" "\$PROFILE" "\$HOST_ESC" "\$LOGIN_ESC" "\$PASS_ESC" "\$MAX_HOURS" "\$TOKEN_ESC"; then
+if ! upsert_profile "$BAKALARI_CONFIG" "$PROFILE" "$HOST_ESC" "$LOGIN_ESC" "$PASS_ESC" "$MAX_HOURS" "$TOKEN_ESC"; then
 	unset PASSWORD
-	log_error "Nepodařilo se uložit profil do \$BAKALARI_CONFIG"
-	exit "\$EXIT_CONFIG"
+	log_error "Nepodařilo se uložit profil do $BAKALARI_CONFIG"
+	exit "$EXIT_CONFIG"
 fi
 
-if ! ensure_general_profile "\$BAKALARI_CONFIG" "\$PROFILE"; then
+if ! ensure_general_profile "$BAKALARI_CONFIG" "$PROFILE"; then
 	unset PASSWORD
 	log_error "Nepodařilo se aktualizovat [general]."
-	exit "\$EXIT_CONFIG"
+	exit "$EXIT_CONFIG"
 fi
 
 unset PASSWORD HOST_ESC LOGIN_ESC PASS_ESC TOKEN_ESC
 
 printf '\n'
 log_ok "Přihlášení proběhlo úspěšně."
-log_ok "Profil: [\$PROFILE]"
-log_ok "Konfigurace: \$BAKALARI_CONFIG"
-printf '\n%sDostupné profily:%s\n' "\$C_BOLD" "\$C_RESET"
+log_ok "Profil: [$PROFILE]"
+log_ok "Konfigurace: $BAKALARI_CONFIG"
+printf '\n%sDostupné profily:%s\n' "$C_BOLD" "$C_RESET"
 list_users
