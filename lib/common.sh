@@ -3,12 +3,12 @@
 # Shared functions and configuration for bakalari-cli.
 # This file is sourced by the individual scripts.
 
-readonly C_RESET=$'\033[0m'
-readonly C_BOLD=$'\033[1m'
-readonly C_RED=$'\033[1;31m'
-readonly C_GREEN=$'\033[1;32m'
-readonly C_YELLOW=$'\033[1;33m'
-readonly C_BLUE=readonly C_GRAY=$'\033[0;90m'
+readonly C_RESET=$'\x1b[0m'
+readonly C_BOLD=$'\x1b[1m'
+readonly C_RED=$'\x1b[1;31m'
+readonly C_GREEN=$'\x1b[1;32m'
+readonly C_YELLOW=$'\x1b[1;33m'
+readonly C_BLUE=readonly C_GRAY=$'\x1b[0;90m'
 
 # Shared process exit codes.
 readonly EXIT_CONFIG=2
@@ -243,8 +243,8 @@ notify_android() {
         --sound \
         --vibrate 500,200,500
 }
-\033[1;34m'
-readonly C_CYAN=readonly C_GRAY=$'\033[0;90m'
+\x1b[1;34m'
+readonly C_CYAN=readonly C_GRAY=$'\x1b[0;90m'
 
 # Shared process exit codes.
 readonly EXIT_CONFIG=2
@@ -479,8 +479,8 @@ notify_android() {
         --sound \
         --vibrate 500,200,500
 }
-\033[1;36m'
-readonly C_GRAY=$'\033[0;90m'
+\x1b[1;36m'
+readonly C_GRAY=$'\x1b[0;90m'
 
 # Shared process exit codes.
 readonly EXIT_CONFIG=2
