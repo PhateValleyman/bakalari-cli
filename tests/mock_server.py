@@ -42,6 +42,28 @@ HOMEWORKS = {
     ]
 }
 
+MARKS = {
+    "Subjects": [
+        {
+            "Subject": {"Id": "10", "Abbrev": "M", "Name": "Matematika"},
+            "AverageText": "1,50",
+            "Marks": [
+                {"MarkText": "1", "Caption": "Smoke", "MarkDate": "2099-01-01T00:00:00", "Weight": 1, "IsNew": True}
+            ]
+        }
+    ]
+}
+
+ABSENCE = {
+    "PercentageThreshold": 0.18,
+    "Absences": [
+        {"Date": "2099-01-01T00:00:00", "Unsolved": 0, "Ok": 5, "Missed": 1, "Late": 1, "Soon": 0}
+    ],
+    "AbsencesPerSubject": [
+        {"SubjectName": "Matematika", "LessonsCount": 6, "Base": 1, "Late": 1, "Soon": 0}
+    ]
+}
+
 
 class Handler(BaseHTTPRequestHandler):
     def _json(self, status, payload):
@@ -76,6 +98,10 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, TIMETABLE)
         elif self.path == "/api/3/homeworks":
             self._json(200, HOMEWORKS)
+        elif self.path == "/api/3/marks":
+            self._json(200, MARKS)
+        elif self.path == "/api/3/absence/student":
+            self._json(200, ABSENCE)
         else:
             self._json(404, {"error": "not_found"})
 
