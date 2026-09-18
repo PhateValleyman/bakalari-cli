@@ -85,9 +85,7 @@ fetch_timetable() {
 
 # Try the stored token first; refresh it automatically when it is missing or invalid.
 if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_timetable 2>/dev/null)"; then
-    if ! TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")"; then
-        exit 1
-    fi
+    TOKEN="$(bakalari_login "$SCHOOL" "$LOGIN_URL" "$USERNAME" "$PASSWORD")" || exit "$?"
     save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
     if ! DATA="$(fetch_timetable)"; then
         log_error "Požadavek na rozvrh selhal i po přihlášení."
