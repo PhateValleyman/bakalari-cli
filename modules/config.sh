@@ -85,7 +85,7 @@ color_swatch() {
 }
 
 render_color_picker() {
-    local current="$1" selected="$2" index="$3"
+    local current="$1" index="$2"
     local i row col marker name value
 
     printf '\\033[2J\\033[H'
@@ -125,7 +125,7 @@ select_color_value() {
     stty -echo -icanon min 1 time 0 || return 1
 
     while :; do
-        render_color_picker "$current" "$selected" "$index" >&2
+        render_color_picker "$current" "$index" >&2
         IFS= read -r -s -n1 key
 
         if [[ "$key" == $'\\e' ]]; then
