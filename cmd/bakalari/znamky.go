@@ -51,7 +51,12 @@ var znamkyCmd = &cobra.Command{
 
 			marks, err = client.FetchMarks()
 			if err != nil {
-				log.Fatalf("Failed to fetch marks: %v", err)
+				if cached, cacheErr := client.LoadCachedMarks(); cacheErr == nil {
+					log.Printf("Warning: using cached data: %v", err)
+					marks = cached
+				} else {
+					log.Fatalf("Failed to fetch marks: %v", err)
+				}
 			}
 		}
 
