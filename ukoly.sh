@@ -53,6 +53,7 @@ PASSWORD="$BAKALARI_PASS"
 TOKEN="$BAKALARI_TOKEN"
 API_BASE_URL="${BAKALARI_BASE_URL:-https://$SCHOOL}"
 LOGIN_URL="$API_BASE_URL/api/login"
+HOMEWORKS_URL="$API_BASE_URL/api/3/homeworks"
 fetch_homeworks() {
     fetch_json "$HOMEWORKS_URL" "$TOKEN"
 }
