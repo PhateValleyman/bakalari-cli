@@ -9,7 +9,12 @@ readonly C_RED=$'\033[1;31m'
 readonly C_GREEN=$'\033[1;32m'
 readonly C_YELLOW=$'\033[1;33m'
 readonly C_BLUE=$'\033[1;34m'
-readonly C_GRAY=
+readonly C_GRAY=$'\033[0;90m'
+
+# Shared process exit codes.
+readonly EXIT_CONFIG=2
+readonly EXIT_NETWORK=3
+readonly EXIT_DATA=4
 log_info()  { printf '%sINFO:%s  %s\n' "$C_BLUE"   "$C_RESET" "$*" >&2; }
 log_warn()  { printf '%sWARN:%s  %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_error() { printf '%sERROR:%s %s\n' "$C_RED"    "$C_RESET" "$*" >&2; }
