@@ -30,8 +30,8 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
       (nebo `--school=DOMÉNA`) a použijí odpovídající sekci podle domény.
 - [x] Přidat `znamky.sh` (známky) a `absence.sh` (absence) – oba skripty
       používají sdílený login/config vzor a API v3 endpointy.
-- [ ] Sjednotit chybové kódy exit statusů (dnes všude `exit 1`; do budoucna
-      rozlišit např. 2 = chybí config, 3 = chyba sítě, 4 = neplatná data).
+- [x] Sjednotit chybové kódy exit statusů: `2` = konfigurace/argumenty,
+      `3` = síť/API transport, `4` = neplatná data.
 
 ## Příprava na přechod na Go
 
