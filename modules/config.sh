@@ -60,16 +60,26 @@ input_value() {
     fi
 }
 
+color_preview() {
+    local color="${1:-}" label
+    [[ "$color" =~ ^[0-9]+$ ]] || { printf '%-8s' "-"; return; }
+    label="        "
+    printf '\033[48;5;%sm\033[38;5;255m%s\033[0m' "$color" "$label"
+}
+
 select_profile() {
-    local profiles
+    local profiles choice
     profiles="$(list_users | cut -f2-)"
     [[ -n "$profiles" ]] || return 1
     if command -v gum >/dev/null 2>&1; then
-        gum choose --header "Profil" <<<"$profiles"
+        choice="$(printf '← Zpět\n%s\n' "$profiles" | gum choose --header 'config/users')"
+        [[ "$choice" == "← Zpět" ]] && return 2
+        printf '%s' "$choice"
     else
-        printf 'Dostupné profily:\n%s\n' "$profiles" >&2
+        printf 'config/users\n← Zpět\n%s\n' "$profiles" >&2
         printf 'Profil: ' >&2
         read -r PROFILE
+        [[ "$PROFILE" == b || "$PROFILE" == B ]] && return 2
         printf '%s' "$PROFILE"
     fi
 }
@@ -98,22 +108,33 @@ edit_global() {
     local -A global_values=()
     local i field value choice new_value marker selected=0
     global_values[cache_dir]="$(config_value general cache_dir)"
+    global_values[cache_dir]="${global_values[cache_dir]:-${XDG_CACHE_HOME:-$HOME/.cache}/bakalari}"
     for subject in Hv M Čj Prv Vv Pč Tv; do
-        global_values[color_$subject]="$(subject_color "$subject" "")"
+        global_values[color_$subject]="$(subject_color "$subject" "$(
+            case "$subject" in
+                Hv) printf 135 ;; M) printf 33 ;; Čj) printf 34 ;; Prv) printf 172 ;;
+                Vv) printf 44 ;; Pč) printf 160 ;; Tv) printf 170 ;;
+            esac
+        )")"
     done
 
     while :; do
         if command -v gum >/dev/null 2>&1; then
-            menu_items=()
+            menu_items=("← Zpět")
             for i in "${!global_labels[@]}"; do
                 field="${global_fields[i]}"
                 value="${global_values[$field]:-}"
                 [[ -z "$value" ]] && value="-"
-                menu_items+=("$(printf '%-20s  %s' "${global_labels[i]}" "$value")")
+                if [[ "$field" == color_* ]]; then
+                    menu_items+=("$(printf '%-20s  %s  %b' "${global_labels[i]}" "$value" "$(color_preview "$value")")")
+                else
+                    menu_items+=("$(printf '%-20s  %s' "${global_labels[i]}" "$value")")
+                fi
             done
             menu_items+=("Uložit a skončit")
             choice="$(printf '%s\n' "${menu_items[@]}" | gum choose --header 'Upravit položku')"
             [[ "$choice" == "Uložit a skončit" ]] && break
+            [[ "$choice" == "← Zpět" ]] && return 0
             for i in "${!global_labels[@]}"; do
                 if [[ "$choice" == "${global_labels[i]}"* ]]; then
                     selected="$i"
@@ -123,7 +144,7 @@ edit_global() {
                 fi
             done
         else
-            printf '\n%s%-24s %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "$C_RESET"
+            printf '\n%s%-24s %s %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Barva" "$C_RESET"
             printf '%s\n' '------------------------------------------------------------------------'
             for i in "${!global_fields[@]}"; do
                 field="${global_fields[i]}"
@@ -131,12 +152,17 @@ edit_global() {
                 [[ -z "$value" ]] && value="-"
                 marker=" "
                 (( i == selected )) && marker=">"
-                printf '%s %-20s %2s %-18s %s\n' "$marker" "${global_labels[i]}" "$((i + 1))" "${global_labels[i]}" "$value"
+                if [[ "$field" == color_* ]]; then
+                    printf '%s %-20s %2s %-18s %s %b\n' "$marker" "${global_labels[i]}" "$((i + 1))" "${global_labels[i]}" "$value" "$(color_preview "$value")"
+                else
+                    printf '%s %-20s %2s %-18s %s\n' "$marker" "${global_labels[i]}" "$((i + 1))" "${global_labels[i]}" "$value"
+                fi
             done
             printf '\n%s q%s  Uložit a skončit\n' "$C_GRAY" "$C_RESET"
             printf 'Položka: ' >&2
             read -r choice
             [[ "$choice" == q || "$choice" == Q ]] && break
+            [[ "$choice" == b || "$choice" == B ]] && return 0
             if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#global_fields[@]} )); then
                 i=$((choice - 1))
                 selected="$i"
@@ -198,8 +224,13 @@ fi
 if (( NEW_PROFILE )); then
     PROFILE="$(input_value "Nový profil")"
 elif [[ -z "$PROFILE" ]]; then
-    PROFILE="$(select_profile || true)"
-    [[ -n "$PROFILE" ]] || PROFILE="$(input_value "Profil")"
+    if PROFILE="$(select_profile)"; then
+        :
+    else
+        rc=$?
+        (( rc == 2 )) && exit 0
+        PROFILE="$(input_value "Profil")"
+    fi
 fi
 [[ "$PROFILE" =~ ^[A-Za-z0-9._-]+$ ]] || { log_error "Neplatný název profilu."; exit "$EXIT_CONFIG"; }
 
@@ -212,12 +243,17 @@ VALUES[name]="$(config_value "$PROFILE" name)"
 VALUES[class]="$(config_value "$PROFILE" class)"
 VALUES[max_hours]="${VALUES[max_hours]:-6}"
 for subject in Hv M Čj Prv Vv Pč Tv; do
-    VALUES[color_$subject]="$(subject_color "$subject" "")"
+    VALUES[color_$subject]="$(subject_color "$subject" "$(
+        case "$subject" in
+            Hv) printf 135 ;; M) printf 33 ;; Čj) printf 34 ;; Prv) printf 172 ;;
+            Vv) printf 44 ;; Pč) printf 160 ;; Tv) printf 170 ;;
+        esac
+    )")"
 done
 
 show_table() {
     local selected="${1:-0}" i field value marker
-    printf '\n%s%-24s %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "$C_RESET"
+    printf '\n%s%-24s %s %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Barva" "$C_RESET"
     printf '%s\n' '------------------------------------------------------------------------'
     for i in "${!FIELDS[@]}"; do
         field="${FIELDS[i]}"
@@ -226,7 +262,11 @@ show_table() {
         [[ -z "$value" ]] && value="-"
         marker=" "
         (( i == selected )) && marker=">"
-        printf '%s %-20s %2s %-18s %s\n' "$marker" "${LABELS[i]}" "$((i + 1))" "${LABELS[i]}" "$value"
+        if [[ "$field" == color_* ]]; then
+            printf '%s %-20s %2s %-18s %s %b\n' "$marker" "${LABELS[i]}" "$((i + 1))" "${LABELS[i]}" "$value" "$(color_preview "$value")"
+        else
+            printf '%s %-20s %2s %-18s %s\n' "$marker" "${LABELS[i]}" "$((i + 1))" "${LABELS[i]}" "$value"
+        fi
     done
     printf '\n%s q%s  Uložit a skončit\n' "$C_GRAY" "$C_RESET"
 }
@@ -252,17 +292,22 @@ edit_field() {
 selected=0
 while :; do
     if command -v gum >/dev/null 2>&1; then
-        menu_items=()
+        menu_items=("← Zpět")
         for i in "${!LABELS[@]}"; do
             field="${FIELDS[i]}"
             value="${VALUES[$field]:-}"
             [[ "$field" == "pass" ]] && value="********"
             [[ -z "$value" ]] && value="-"
-            menu_items+=("$(printf '%-20s  %s' "${LABELS[i]}" "$value")")
+            if [[ "$field" == color_* ]]; then
+                menu_items+=("$(printf '%-20s  %s  %b' "${LABELS[i]}" "$value" "$(color_preview "$value")")")
+            else
+                menu_items+=("$(printf '%-20s  %s' "${LABELS[i]}" "$value")")
+            fi
         done
         menu_items+=("Uložit a skončit")
         choice="$(printf '%s\n' "${menu_items[@]}" | gum choose --header 'Upravit položku')"
         [[ "$choice" == "Uložit a skončit" ]] && break
+        [[ "$choice" == "← Zpět" ]] && exit 0
         for i in "${!LABELS[@]}"; do
             if [[ "${choice}" == "${LABELS[i]}"* ]]; then
                 selected="$i"
@@ -274,6 +319,7 @@ while :; do
         printf 'Položka: ' >&2
         read -r choice
         [[ "$choice" == q || "$choice" == Q ]] && break
+        [[ "$choice" == b || "$choice" == B ]] && exit 0
         if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#FIELDS[@]} )); then
             selected="$((choice - 1))"
             edit_field "$selected"
