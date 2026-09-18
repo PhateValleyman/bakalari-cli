@@ -48,8 +48,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-require_cmd curl jq awk || exit 1
-require_config || exit 1
+require_cmd curl jq awk || exit "$EXIT_CONFIG"
+require_config || exit "$EXIT_CONFIG"
 
 SCHOOL="${SCHOOL_OVERRIDE:-$(config_value general school)}"
 SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
@@ -72,11 +72,11 @@ TOKEN="$(config_value "$SCHOOL" TOKEN)"
 
 if [[ -z "$USERNAME" ]]; then
     log_error "Chybí \"user\" v $BAKALARI_CONFIG"
-    exit 1
+    exit "$EXIT_CONFIG"
 fi
 if [[ -z "$PASSWORD" ]]; then
     log_error "Chybí \"pass\" v $BAKALARI_CONFIG"
-    exit 1
+    exit "$EXIT_CONFIG"
 fi
 
 fetch_timetable() {
@@ -91,13 +91,13 @@ if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_timetable 2>/dev/null)"; then
     save_token "$SCHOOL" "$TOKEN" || log_warn "Nepodařilo se uložit TOKEN do $BAKALARI_CONFIG"
     if ! DATA="$(fetch_timetable)"; then
         log_error "Požadavek na rozvrh selhal i po přihlášení."
-        exit 1
+        exit "$EXIT_NETWORK"
     fi
 fi
 
 if ! printf '%s' "$DATA" | jq -e . >/dev/null 2>&1; then
     log_error "Bakaláři vrátili neplatný JSON."
-    exit 1
+    exit "$EXIT_DATA"
 fi
 
 if ! printf '%s' "$DATA" | jq -e '
@@ -174,12 +174,12 @@ if ! TABLE="$(
     '
 )"; then
     log_error "Nepodařilo se vykreslit rozvrh."
-    exit 1
+    exit "$EXIT_DATA"
 fi
 
 if [[ -z "$TABLE" ]]; then
     log_error "Rozvrh je prázdný."
-    exit 1
+    exit "$EXIT_DATA"
 fi
 
 # Read configured subject colors while preserving the original defaults.
