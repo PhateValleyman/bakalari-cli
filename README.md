@@ -36,14 +36,15 @@ git clone https://github.com/PhateValleyman/bakalari-cli.git
 cd bakalari-cli
 chmod +x rozvrh.sh ukoly.sh znamky.sh absence.sh
 
-mkdir -p ~/.config/bakalari
-cp config.toml.example ~/.config/bakalari/config.toml
-$EDITOR ~/.config/bakalari/config.toml
+mkdir -p ~/.config/bakalari-cli
+cp config.toml.example ~/.config/bakalari-cli/config.toml
+chmod 600 ~/.config/bakalari-cli/config.toml
+$EDITOR ~/.config/bakalari-cli/config.toml
 ```
 
 ## Konfigurace
 
-Konfigurace žije v `~/.config/bakalari/config.toml` (cestu lze přebít proměnnou prostředí `BAKALARI_CONFIG`). Soubor **není** součástí repozitáře (viz `.gitignore`) — obsahuje přihlašovací údaje.
+Hlavní konfigurace žije v `~/.config/bakalari-cli/config.toml`. Pokud existuje starší `~/.bakalariclirc`, použije se místo hlavní konfigurace. Proměnná prostředí `BAKALARI_CONFIG` má nejvyšší prioritu a může explicitně určit jiný soubor. Soubor **není** součástí repozitáře (viz `.gitignore`) — obsahuje přihlašovací údaje.
 
 ```toml
 [general]
@@ -166,7 +167,7 @@ Veškerá logika společná pro více skriptů (čtení configu, přihlašován�
 
 ## Bezpečnost
 
-- `config.toml` obsahuje heslo v čistém textu — udržujte mu rozumná práva (`chmod 600 ~/.config/bakalari/config.toml`) a nikdy jej necommitujte.
+- Konfigurační soubor obsahuje heslo v čistém textu — udržujte mu rozumná práva (`chmod 600 ~/.config/bakalari-cli/config.toml` nebo odpovídající cestu pro `~/.bakalariclirc`) a nikdy jej necommitujte.
 - Pokud jste dřív používali starší verzi `ukoly.sh` s přihlašovacími údaji natvrdo v kódu, **změňte si heslo k Bakalářům** a údaje přesuňte do `config.toml`.
 
 ## Roadmap
