@@ -51,6 +51,8 @@ export BAKALARI_BASE_URL="http://127.0.0.1:$PORT"
 
 ROZVRH_OUTPUT="$TMP_DIR/rozvrh.out"
 UKOLY_OUTPUT="$TMP_DIR/ukoly.out"
+ZNAMKY_OUTPUT="$TMP_DIR/znamky.out"
+ABSENCE_OUTPUT="$TMP_DIR/absence.out"
 
 "$ROOT_DIR/rozvrh.sh" --school mock.bakalari.test >"$ROZVRH_OUTPUT"
 
@@ -61,5 +63,15 @@ grep -Fq $'\033[48;5;135m' "$ROZVRH_OUTPUT"
 "$ROOT_DIR/ukoly.sh" --school mock.bakalari.test >"$UKOLY_OUTPUT"
 grep -Fq "Smoke test" "$UKOLY_OUTPUT"
 
+"$ROOT_DIR/znamky.sh" --school mock.bakalari.test >"$ZNAMKY_OUTPUT"
+grep -Fq "Smoke" "$ZNAMKY_OUTPUT"
+grep -Fq "1,50" "$ZNAMKY_OUTPUT"
+
+"$ROOT_DIR/absence.sh" --school mock.bakalari.test >"$ABSENCE_OUTPUT"
+grep -Fq "zameškáno=1" "$ABSENCE_OUTPUT"
+grep -Fq "Matematika" "$ABSENCE_OUTPUT"
+
 printf 'OK: rozvrh.sh smoke test\n'
 printf 'OK: ukoly.sh smoke test\n'
+printf 'OK: znamky.sh smoke test\n'
+printf 'OK: absence.sh smoke test\n'
