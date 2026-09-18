@@ -26,9 +26,15 @@ EOF
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		-h|--help)
-			usage
-			exit 0
-			;;
+            usage_module_header "Modul: login"
+            usage_section "Použití:"
+            printf '  %sbakalari-cli login%s [volby]\n' "$C_BOLD" "$C_RESET"
+            printf '\n'
+            usage_section "Volby:"
+            usage_option "--user USER" "Upravit konkrétní profil"
+            usage_option "--help" "Zobrazit tuto nápovědu"
+            exit 0
+            
 		--user)
 			[[ $# -ge 2 && -n "$2" ]] || {
 				log_error "Volba --user vyžaduje název profilu."
