@@ -105,6 +105,19 @@ Přístupový token se po prvním přihlášení uloží zpět do konfigurace a 
 ./ukoly.sh  --help
 ```
 
+### Testy
+
+Projekt obsahuje lokální API mock a smoke testy bez nutnosti přihlašovat se ke skutečnému účtu:
+
+```bash
+# Run the complete local smoke test suite.
+bash tests/smoke.sh
+```
+
+CI automaticky spouští `shellcheck` nad shellovými skripty a následně stejné smoke testy.
+
+```
+
 ### Automatizace (Termux crond / cron)
 
 ```cron
