@@ -46,6 +46,9 @@ var ukolyCmd = &cobra.Command{
 			}
 			profile.Token = client.Token
 			cfg.Profiles[profileName] = profile
+			if err := bakalari.SaveToken(configPath, profileName, client.Token); err != nil {
+				log.Printf("Warning: failed to save token: %v", err)
+			}
 
 			homeworks, err = client.FetchHomeworks()
 			if err != nil {
