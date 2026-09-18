@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
             usage_option "--list-users" "Vypsat dostupné profily"
             usage_option "--help" "Zobrazit tuto nápovědu"
             exit 0
-            
+            ;;
         --user)
             [[ $# -ge 2 && -n "$2" ]] || { log_error "Volba --user vyžaduje profil."; exit 2; }
             USER_OVERRIDE="$2"
