@@ -53,6 +53,7 @@ PASSWORD="$BAKALARI_PASS"
 TOKEN="$BAKALARI_TOKEN"
 API_BASE_URL="${BAKALARI_BASE_URL:-https://$SCHOOL}"
 LOGIN_URL="$API_BASE_URL/api/login"
+MARKS_URL="$API_BASE_URL/api/3/marks"
 fetch_marks() { fetch_json "$MARKS_URL" "$TOKEN"; }
 
 if [[ -z "$TOKEN" ]] || ! DATA="$(fetch_marks 2>/dev/null)"; then
