@@ -89,32 +89,34 @@ render_color_picker() {
     local -n values_ref="$values_name"
     local -n labels_ref="$labels_name"
     local -n data_ref="$data_name"
-    local i field value marker palette_marker
+    local i field value marker palette_marker palette_index row_count
     printf '\033[2J\033[H'
-    printf '%s%-24s %-8s %-12s    %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Náhled" \
+    printf '%s%-32s %-18s %-12s    %s%s\n' "$C_BOLD" "Upravit položku" "Hodnoty" "Náhled" \
         "Vyber barvu (↑/↓, Enter, Esc)" "$C_RESET"
-    printf '%s\n' '--------------------------------------------------------------------------------'
-    for i in "${!labels_ref[@]}"; do
-        field="${values_ref[i]}"
-        value="${data_ref[$field]:-}"
-        [[ "$field" == "pass" ]] && value="********"
-        [[ -n "$value" ]] || value="-"
-        marker=" "
-        [[ "$i" == "$selected" ]] && marker=">"
-        printf '%s %-20s %-8s %b  ' "$marker" "${labels_ref[i]}" "$value" \
-            "$(color_preview "$value")"
-        if (( i < ${#COLOR_NAMES[@]} )); then
-            palette_marker=" "
-            (( i == color_index )) && palette_marker=">"
-            color_swatch "${COLOR_VALUES[i]}" "${COLOR_NAMES[i]}" "$palette_marker"
+    printf '%s\n' '------------------------------------------------------------------------------------------'
+    row_count="${#labels_ref[@]}"
+    (( ${#COLOR_NAMES[@]} + selected > row_count )) &&
+        row_count=$(( ${#COLOR_NAMES[@]} + selected ))
+    for ((i=0; i<row_count; i++)); do
+        if (( i < ${#labels_ref[@]} )); then
+            field="${values_ref[i]}"
+            value="${data_ref[$field]:-}"
+            [[ "$field" == "pass" ]] && value="********"
+            [[ -n "$value" ]] || value="-"
+            marker=" "
+            [[ "$i" == "$selected" ]] && marker=">"
+            printf '%s %-26s %-18s %b' "$marker" "${labels_ref[i]}" "$value" \
+                "$(color_preview "$value")"
+        else
+            printf '%-54s' ''
         fi
-        printf '\n'
-    done
-    for ((i=${#labels_ref[@]}; i<${#COLOR_NAMES[@]}; i++)); do
-        printf '%-48s' ''
-        palette_marker=" "
-        (( i == color_index )) && palette_marker=">"
-        color_swatch "${COLOR_VALUES[i]}" "${COLOR_NAMES[i]}" "$palette_marker"
+        palette_index=$((i - selected))
+        if (( palette_index >= 0 && palette_index < ${#COLOR_NAMES[@]} )); then
+            palette_marker=" "
+            (( palette_index == color_index )) && palette_marker=">"
+            color_swatch "${COLOR_VALUES[palette_index]}" \
+                "${COLOR_NAMES[palette_index]}" "$palette_marker"
+        fi
         printf '\n'
     done
     printf '\n%sEsc%s zrušit   %sEnter%s potvrdit\n' "$C_GRAY" "$C_RESET" "$C_GRAY" "$C_RESET"
