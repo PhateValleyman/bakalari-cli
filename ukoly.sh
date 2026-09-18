@@ -18,15 +18,41 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    printf 'Použití: %s\nZkontroluje nesplněné domácí úkoly v Bakalářích.\n' "$0"
-    exit 0
-fi
+SCHOOL_OVERRIDE=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            printf 'Použití: %s [--school DOMÉNA]\nZkontroluje nesplněné domácí úkoly v Bakalářích.\n' "$0"
+            exit 0
+            ;;
+        --school)
+            if [[ $# -lt 2 || -z "$2" ]]; then
+                log_error "Volba --school vyžaduje doménu školy."
+                exit 2
+            fi
+            SCHOOL_OVERRIDE="$2"
+            shift 2
+            ;;
+        --school=*)
+            SCHOOL_OVERRIDE="${1#*=}"
+            if [[ -z "$SCHOOL_OVERRIDE" ]]; then
+                log_error "Volba --school vyžaduje doménu školy."
+                exit 2
+            fi
+            shift
+            ;;
+        *)
+            log_error "Neznámý argument: $1"
+            printf 'Použití: %s [--school DOMÉNA]\n' "$0" >&2
+            exit 2
+            ;;
+    esac
+done
 
 require_cmd curl jq || exit 1
 require_config || exit 1
 
-SCHOOL="$(config_value general school)"
+SCHOOL="${SCHOOL_OVERRIDE:-$(config_value general school)}"
 SCHOOL="${SCHOOL:-zssumava.bakalari.cz}"
 API_BASE_URL="${BAKALARI_BASE_URL:-https://${SCHOOL}}"
 LOGIN_URL="${API_BASE_URL}/api/login"
