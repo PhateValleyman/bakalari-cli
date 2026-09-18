@@ -20,7 +20,7 @@ PORT_FILE="$TMP_DIR/port"
 
 cat >"$CONFIG" <<'EOF'
 [general]
-school = "mock.bakalari.test"
+school = "default.bakalari.test"
 max_hours = 2
 
 [colors]
@@ -52,13 +52,13 @@ export BAKALARI_BASE_URL="http://127.0.0.1:$PORT"
 ROZVRH_OUTPUT="$TMP_DIR/rozvrh.out"
 UKOLY_OUTPUT="$TMP_DIR/ukoly.out"
 
-"$ROOT_DIR/rozvrh.sh" >"$ROZVRH_OUTPUT"
+"$ROOT_DIR/rozvrh.sh" --school mock.bakalari.test >"$ROZVRH_OUTPUT"
 
 grep -Fq 'TOKEN = "test-token"' "$CONFIG"
 grep -Fq $'\033[48;5;226m' "$ROZVRH_OUTPUT"
 grep -Fq $'\033[48;5;135m' "$ROZVRH_OUTPUT"
 
-"$ROOT_DIR/ukoly.sh" >"$UKOLY_OUTPUT"
+"$ROOT_DIR/ukoly.sh" --school mock.bakalari.test >"$UKOLY_OUTPUT"
 grep -Fq "Smoke test" "$UKOLY_OUTPUT"
 
 printf 'OK: rozvrh.sh smoke test\n'
