@@ -48,6 +48,7 @@ fi
 PORT="$(cat "$PORT_FILE")"
 export BAKALARI_CONFIG="$CONFIG"
 export BAKALARI_BASE_URL="http://127.0.0.1:$PORT"
+export BAKALARI_CACHE_DIR="$TMP_DIR/cache"
 
 ROZVRH_OUTPUT="$TMP_DIR/rozvrh.out"
 UKOLY_OUTPUT="$TMP_DIR/ukoly.out"
@@ -70,6 +71,16 @@ grep -Fq "1,50" "$ZNAMKY_OUTPUT"
 "$ROOT_DIR/absence.sh" --school mock.bakalari.test >"$ABSENCE_OUTPUT"
 grep -Fq "zameškáno=1" "$ABSENCE_OUTPUT"
 grep -Fq "Matematika" "$ABSENCE_OUTPUT"
+
+# Verify the timetable remains available after the API goes offline.
+kill "$SERVER_PID"
+wait "$SERVER_PID" 2>/dev/null || true
+SERVER_PID=""
+
+"$ROOT_DIR/rozvrh.sh" --school mock.bakalari.test >"$TMP_DIR/rozvrh-offline.out" 2>"$TMP_DIR/rozvrh-offline.err"
+grep -Fq "08:00" "$TMP_DIR/rozvrh-offline.out"
+grep -Fq "používám uložený rozvrh" "$TMP_DIR/rozvrh-offline.err"
+
 
 printf 'OK: rozvrh.sh smoke test\n'
 printf 'OK: ukoly.sh smoke test\n'
