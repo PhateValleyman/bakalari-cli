@@ -45,6 +45,9 @@ var infoCmd = &cobra.Command{
 			}
 			profile.Token = client.Token
 			cfg.Profiles[profileName] = profile
+			if err := bakalari.SaveToken(configPath, profileName, client.Token); err != nil {
+				log.Printf("Warning: failed to save token: %v", err)
+			}
 
 			userInfo, err = client.FetchUserInfo()
 			if err != nil {
