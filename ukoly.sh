@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-require_cmd curl jq || exit "$EXIT_CONFIG"
+require_cmd curl jq sort sed || exit "$EXIT_CONFIG"
 require_config || exit "$EXIT_CONFIG"
 
 if (( LIST_USERS )); then
