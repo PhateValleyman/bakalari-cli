@@ -32,6 +32,7 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 - [x] Sjednotit chybové kódy exit statusů: `2` = konfigurace/argumenty,
       `3` = síť/API transport, `4` = neplatná data.
 - [x] Lokálně cachovat poslední platný rozvrh a při offline provozu jej automaticky použít.
+- [x] Přidat `info.sh` – profil studenta, třída, třídní učitel, docházka a průměry podle předmětů.
 
 ## Příprava na přechod na Go
 
@@ -41,7 +42,7 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
       sekce podle domény školy) – v Go půjde načíst pomocí
       `github.com/BurntSushi/toml` beze změny formátu pro uživatele.
 - [x] Vyextrahovat JSON tvary odpovědí Bakalářů (login, timetable,
-      homeworks, marks, absence) do `docs/api-notes.md` jako podklad pro Go
+      homeworks, marks, absence, user info) do `docs/api-notes.md` jako podklad pro Go
       struktury (`struct { ... }` + `json:"..."` tagy).
 - [ ] Navrhnout `internal/bakalari` balíček v Go s rozhraním, které
       odpovídá dnešním bash funkcím v `lib/common.sh`:
