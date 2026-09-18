@@ -190,19 +190,7 @@ GitLab CI spouští `shellcheck`, kontrolu syntaxe a stejné smoke testy.
 bakalari-cli/
 ├── bakalari-cli          # hlavní CLI dispatcher
 ├── modules/              # jednotlivé CLI moduly
-│   ├── absence.sh
-│   ├── info.sh
-│   ├── login.sh
-│   ├── rozvrh.sh
-│   ├── ukoly.sh
-│   └── znamky.sh
-├── absence.sh             # kompatibilní wrapper
-├── info.sh                # kompatibilní wrapper
-├── login.sh               # kompatibilní wrapper
-├── rozvrh.sh              # kompatibilní wrapper
-├── ukoly.sh               # kompatibilní wrapper
-├── znamky.sh              # kompatibilní wrapper
-├── lib/
+│   ├── lib/
 │   └── common.sh          # sdílená konfigurace, login, barvy, logování
 ├── config.toml.example
 ├── docs/
