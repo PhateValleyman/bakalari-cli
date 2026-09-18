@@ -109,7 +109,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json(401, {"error": "unauthorized"})
             return
 
-        if self.path == "/api/3/user":\n            self._json(200, USER_INFO)\n        elif self.path == "/api/3/timetable/actual":
+        if self.path == "/api/3/user":
+            self._json(200, USER_INFO)\n        elif self.path == "/api/3/timetable/actual":
             self._json(200, TIMETABLE)
         elif self.path == "/api/3/homeworks":
             self._json(200, HOMEWORKS)
