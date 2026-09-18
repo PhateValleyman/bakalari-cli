@@ -52,7 +52,12 @@ var ukolyCmd = &cobra.Command{
 
 			homeworks, err = client.FetchHomeworks()
 			if err != nil {
-				log.Fatalf("Failed to fetch homeworks: %v", err)
+				if cached, cacheErr := client.LoadCachedHomeworks(); cacheErr == nil {
+					log.Printf("Warning: using cached homeworks: %v", err)
+					homeworks = cached
+				} else {
+					log.Fatalf("Failed to fetch homeworks: %v", err)
+				}
 			}
 		}
 
