@@ -275,7 +275,7 @@ update_config_key() {
     tmp="$(mktemp "${BAKALARI_CONFIG}.tmp.XXXXXX")" || return 1
     awk -v section="$section" -v key="$key" -v value="$value" '
         function emit() {
-            if (section == "colors") print key " = " value
+            if (section == "colors") print "\"" key "\" = " value
             else print key " = \"" value "\""
             done=1
         }
@@ -286,7 +286,7 @@ update_config_key() {
         header == "[" section "]" { insec=1; found=1; print; next }
         insec {
             current_key=$1
-            gsub(/^\\"|\\"$/, "", current_key)
+            gsub(/^"|"$/, "", current_key)
             if (current_key == key) { emit(); next }
         }
         substr(header, 1, 1) == "[" {
@@ -457,7 +457,7 @@ for subject in Hv M Čj Prv Vv Pč Tv; do
     awk -v key="$subject" -v value="$value" '
         /^[[:space:]]*\[colors\][[:space:]]*$/ { insec=1; found=1; print; next }
         /^[[:space:]]*\[/ {
-            if (insec && !done) { print "\\"" key "\\" = " value; done=1 }
+            if (insec && !done) { print "\"" key "\" = " value; done=1 }
             insec=0
         }
         insec {
