@@ -284,7 +284,11 @@ update_config_key() {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", header)
         }
         header == "[" section "]" { insec=1; found=1; print; next }
-        insec && $1 == key { emit(); next }
+        insec {
+            current_key=$1
+            gsub(/^\\"|\\"$/, "", current_key)
+            if (current_key == key) { emit(); next }
+        }
         substr(header, 1, 1) == "[" {
             if (insec && !done) emit()
             insec=0
@@ -453,14 +457,18 @@ for subject in Hv M Čj Prv Vv Pč Tv; do
     awk -v key="$subject" -v value="$value" '
         /^[[:space:]]*\[colors\][[:space:]]*$/ { insec=1; found=1; print; next }
         /^[[:space:]]*\[/ {
-            if (insec && !done) { print key " = " value; done=1 }
+            if (insec && !done) { print "\\"" key "\\" = " value; done=1 }
             insec=0
         }
-        insec && $1 == key { print key " = " value; done=1; next }
+        insec {
+            current_key=$1
+            gsub(/^\\"|\\"$/, "", current_key)
+            if (current_key == key) { print "\\"" key "\\" = " value; done=1; next }
+        }
         { print }
         END {
-            if (insec && !done) print key " = " value
-            if (!found) { print ""; print "[colors]"; print key " = " value }
+            if (insec && !done) print "\\"" key "\\" = " value
+            if (!found) { print ""; print "[colors]"; print "\\"" key "\\" = " value }
         }
     ' "$BAKALARI_CONFIG" >"$tmp" || { rm -f "$tmp"; exit "$EXIT_CONFIG"; }
     chmod 600 "$tmp" 2>/dev/null || true
