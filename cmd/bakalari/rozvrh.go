@@ -39,9 +39,14 @@ var rozvrhCmd = &cobra.Command{
 
 		timetable, err := client.FetchTimetable()
 		if err != nil {
-			// Try to login if token fails
+			// Try to refresh the token; if the network is unavailable, use cache.
 			err = client.Login(profile.User, profile.Pass)
 			if err != nil {
+				if cached, cacheErr := client.LoadCachedTimetable(); cacheErr == nil {
+					log.Printf("Warning: using cached timetable: %v", err)
+					bakalari.RenderTimetable(cached, profile.MaxHours, cfg.Colors)
+					return
+				}
 				log.Fatalf("Login failed: %v", err)
 			}
 			// Update token in config (in memory for now, save later)
