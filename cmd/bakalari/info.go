@@ -41,6 +41,13 @@ var infoCmd = &cobra.Command{
 		if err != nil {
 			err = client.Login(profile.User, profile.Pass)
 			if err != nil {
+				if cached, cacheErr := client.LoadCachedUserInfo(); cacheErr == nil {
+					log.Printf("Warning: using cached user info: %v", err)
+					absence, _ := client.LoadCachedAbsence()
+					marks, _ := client.LoadCachedMarks()
+					bakalari.RenderInfo(cached, absence, marks)
+					return
+				}
 				log.Fatalf("Login failed: %v", err)
 			}
 			profile.Token = client.Token
