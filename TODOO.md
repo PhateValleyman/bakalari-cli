@@ -5,6 +5,11 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 
 ## Právě opraveno
 
+- [x] Go klient měl chybějící `LoadCachedTimetable()` a nešel zkompilovat – doplněn loader cache rozvrhu.
+- [x] Go příkazy při nedostupné síti končily chybou po neúspěšném loginu místo použití offline cache – všechny datové příkazy nyní po selhání obnovy tokenu zkusí cache.
+- [x] Opravena TOML escapace tokenu v Go klientovi (zpětná lomítka a uvozovky).
+- [x] Přidán `make test` a Go test job do GitLab CI (`go test -mod=vendor ./...`).
+
 - [x] `ukoly.sh` mělo natvrdo v kódu uživatelské jméno a heslo k Bakalářům –
       přesunuto do `config.toml`, sdíleno s `rozvrh.sh`.
 - [x] `rozvrh.sh` a `ukoly.sh` měly každý vlastní (a rozdílnou) logiku pro
