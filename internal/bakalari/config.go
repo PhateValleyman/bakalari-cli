@@ -270,7 +270,7 @@ func SaveToken(path, profileName, token string) error {
 	if !tokenWritten {
 		for i, line := range lines {
 			if strings.TrimSpace(line) == section {
-				lines = append(lines[:i+1], append([]string{"token = \"" + escapeTOMLString(token) + "\"" }, lines[i+1:]...)...)
+				lines = append(lines[:i+1], append([]string{"token = \"" + escapeTOMLString(token) + "\""}, lines[i+1:]...)...)
 				break
 			}
 		}

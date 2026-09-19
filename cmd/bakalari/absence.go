@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/phatevalleyman/bakalari-cli/internal/bakalari"
 	"github.com/spf13/cobra"
@@ -13,59 +11,19 @@ var absenceCmd = &cobra.Command{
 	Use:   "absence",
 	Short: "Show absence",
 	Run: func(cmd *cobra.Command, args []string) {
-		configPath := configFile
-		if configPath == "" {
-			configPath = os.Getenv("BAKALARI_CONFIG")
-		}
+		client, cfg, configPath, profileName, profile := setupClient()
 
-		cfg, err := bakalari.LoadConfig(configPath)
+		result, err := bakalari.FetchWithLoginFallback(client, profile.User, profile.Pass,
+			client.FetchAbsence, client.LoadCachedAbsence)
 		if err != nil {
-			log.Fatalf("Failed to load config: %v", err)
+			log.Fatalf("Failed to fetch absence: %v", err)
 		}
-
-		profileName, profile, err := cfg.ResolveUser(userProfile)
-		if err != nil {
-			log.Fatalf("Failed to resolve user: %v", err)
+		if result.FromCache {
+			log.Println("Warning: using cached absence")
 		}
+		persistTokenIfLoggedIn(result.LoggedIn, client, cfg, configPath, profileName, &profile)
 
-		client := bakalari.NewClient(profile.Host)
-		client.Token = profile.Token
-		client.Profile = profileName
-		client.CacheDir = cfg.General.CacheDir
-		if client.CacheDir == "" {
-			home, _ := os.UserHomeDir()
-			client.CacheDir = filepath.Join(home, ".cache", "bakalari-cli")
-		}
-
-		absence, err := client.FetchAbsence()
-		if err != nil {
-			err = client.Login(profile.User, profile.Pass)
-			if err != nil {
-				if cached, cacheErr := client.LoadCachedAbsence(); cacheErr == nil {
-					log.Printf("Warning: using cached absence: %v", err)
-					bakalari.RenderAbsence(cached)
-					return
-				}
-				log.Fatalf("Login failed: %v", err)
-			}
-			profile.Token = client.Token
-			cfg.Profiles[profileName] = profile
-			if err := bakalari.SaveToken(configPath, profileName, client.Token); err != nil {
-				log.Printf("Warning: failed to save token: %v", err)
-			}
-
-			absence, err = client.FetchAbsence()
-			if err != nil {
-				if cached, cacheErr := client.LoadCachedAbsence(); cacheErr == nil {
-					log.Printf("Warning: using cached data: %v", err)
-					absence = cached
-				} else {
-					log.Fatalf("Failed to fetch absence: %v", err)
-				}
-			}
-		}
-
-		bakalari.RenderAbsence(absence)
+		bakalari.RenderAbsence(result.Data)
 	},
 }
 

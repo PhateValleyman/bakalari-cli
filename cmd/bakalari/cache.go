@@ -48,7 +48,7 @@ var cacheCmd = &cobra.Command{
 			return
 		}
 
-		// Default is list
+		// --list is also the default action when no flag is given at all.
 		if err := bakalari.ListCache(cacheDir); err != nil {
 			log.Fatalf("Failed to list cache: %v", err)
 		}
@@ -56,7 +56,11 @@ var cacheCmd = &cobra.Command{
 }
 
 func init() {
-	cacheCmd.Flags().BoolVar(&cacheList, "list", false, "List cache files")
+	// cacheList itself is never read: listing is already the fallback
+	// behavior below. The flag exists purely so `--list` is a valid,
+	// self-documenting way to ask for that explicitly instead of relying
+	// on "no other flag" behavior.
+	cacheCmd.Flags().BoolVar(&cacheList, "list", false, "List cache files (default action)")
 	cacheCmd.Flags().BoolVar(&cachePath, "path", false, "Show cache path")
 	cacheCmd.Flags().BoolVar(&cacheClear, "clear", false, "Clear cache")
 	rootCmd.AddCommand(cacheCmd)

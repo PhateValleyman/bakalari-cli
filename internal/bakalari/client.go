@@ -159,28 +159,36 @@ func (c *Client) LoadCachedTimetable() (*TimetableResponse, error) {
 // LoadCachedHomeworks loads the last successfully fetched homeworks.
 func (c *Client) LoadCachedHomeworks() (*HomeworksResponse, error) {
 	var result HomeworksResponse
-	if err := c.loadCache("homeworks", &result); err != nil { return nil, err }
+	if err := c.loadCache("homeworks", &result); err != nil {
+		return nil, err
+	}
 	return &result, nil
 }
 
 // LoadCachedMarks loads the last successfully fetched marks.
 func (c *Client) LoadCachedMarks() (*MarksResponse, error) {
 	var result MarksResponse
-	if err := c.loadCache("marks", &result); err != nil { return nil, err }
+	if err := c.loadCache("marks", &result); err != nil {
+		return nil, err
+	}
 	return &result, nil
 }
 
 // LoadCachedAbsence loads the last successfully fetched absence data.
 func (c *Client) LoadCachedAbsence() (*AbsenceResponse, error) {
 	var result AbsenceResponse
-	if err := c.loadCache("absence", &result); err != nil { return nil, err }
+	if err := c.loadCache("absence", &result); err != nil {
+		return nil, err
+	}
 	return &result, nil
 }
 
 // LoadCachedUserInfo loads the last successfully fetched user info.
 func (c *Client) LoadCachedUserInfo() (*UserInfo, error) {
 	var result UserInfo
-	if err := c.loadCache("info", &result); err != nil { return nil, err }
+	if err := c.loadCache("info", &result); err != nil {
+		return nil, err
+	}
 	return &result, nil
 }
 

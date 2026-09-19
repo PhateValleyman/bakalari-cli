@@ -5,6 +5,31 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 
 ## Právě opraveno
 
+- [x] `config_test.go` měl neescapovanou uvozovku kolem `"Čj"` v řetězcovém
+      literálu → `go build`/`go vet`/`go test` na celém modulu vůbec neprošly.
+      Opraveno, `gofmt -l` je teď na `internal/` a `cmd/` čisté (předtím
+      nekonzistentní formátování napříč skoro všemi soubory).
+- [x] `internal/bakalari/timetable.go`: `center()` a výpočet šířky sloupců
+      počítaly délku textu přes `len()` (bajty) místo počtu znaků → tabulka
+      rozvrhu se s diakritikou (`Čj`, `Pč`, `Út`, `Čt`, `Pá`, `Dvořák`, ...)
+      rozjížděla nebo se text uřízl uprostřed víceznakového UTF-8 znaku.
+      Přepsáno na `utf8.RuneCountInString` / bezpečné ořezávání přes `[]rune`.
+- [x] `marks.go`, `absence.go`, `homeworks.go`, `info.go`: nadpisy sekcí
+      (`=== Známky ===` apod.) používaly `color.New(color.Bold).SprintFunc()("")`
+      – tučně se obalil prázdný řetězec a samotný text zůstal netučný.
+      Sjednoceno na jednu `header()`/`bold()` pomocnou funkci na soubor.
+- [x] `rozvrh.go`, `ukoly.go`, `znamky.go`, `absence.go`, `info.go` měly
+      každý ručně kopírovanou (~25řádkovou) sekvenci
+      „zkus fetch → login → retry → fallback na cache → ulož token“.
+      Vyextrahováno do `bakalari.FetchWithLoginFallback[T]` (generická
+      funkce, `internal/bakalari/fetch.go` + `fetch_test.go`) a
+      `cmd/bakalari/common.go` (`setupClient`, `persistTokenIfLoggedIn`).
+      Chování je teď garantovaně stejné pro všechny datové příkazy.
+- [x] `ukoly.go` míchalo v notifikaci češtinu s angličtinou
+      (`"%s and %d more"`) → sjednoceno na češtinu (`"a %d další"`).
+- [x] Nová funkce (byl to nápad níž v sekci "Nápady"): `znamky` teď při
+      zjištění nových známek (`IsNew`) pošle Android notifikaci stejně
+      jako `ukoly` u nesplněných úkolů.
 - [x] Go klient měl chybějící `LoadCachedTimetable()` a nešel zkompilovat – doplněn loader cache rozvrhu.
 - [x] Go příkazy při nedostupné síti končily chybou po neúspěšném loginu místo použití offline cache – všechny datové příkazy nyní po selhání obnovy tokenu zkusí cache.
 - [x] Opravena TOML escapace tokenu v Go klientovi (zpětná lomítka a uvozovky).
@@ -78,4 +103,6 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
 
 - [ ] Widget/shortcut pro Termux:Widget spouštějící `rozvrh.sh`.
 - [ ] Export rozvrhu do `.ics` (kalendář).
-- [ ] Souhrnná notifikace i pro nové známky, ne jen úkoly.
+- [x] Souhrnná notifikace i pro nové známky, ne jen úkoly. (hotovo v Go i
+      bash verzi – `znamky`/`znamky.sh` teď posílají notifikaci stejně jako
+      `ukoly`/`ukoly.sh`.)

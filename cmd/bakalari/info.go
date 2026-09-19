@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/phatevalleyman/bakalari-cli/internal/bakalari"
 	"github.com/spf13/cobra"
@@ -13,81 +11,32 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Show student info",
 	Run: func(cmd *cobra.Command, args []string) {
-		configPath := configFile
-		if configPath == "" {
-			configPath = os.Getenv("BAKALARI_CONFIG")
-		}
+		client, cfg, configPath, profileName, profile := setupClient()
 
-		cfg, err := bakalari.LoadConfig(configPath)
+		result, err := bakalari.FetchWithLoginFallback(client, profile.User, profile.Pass,
+			client.FetchUserInfo, client.LoadCachedUserInfo)
 		if err != nil {
-			log.Fatalf("Failed to load config: %v", err)
+			log.Fatalf("Failed to fetch user info: %v", err)
 		}
+		if result.FromCache {
+			log.Println("Warning: using cached user info")
+		}
+		persistTokenIfLoggedIn(result.LoggedIn, client, cfg, configPath, profileName, &profile)
 
-		profileName, profile, err := cfg.ResolveUser(userProfile)
+		// Absence and marks are supplementary here: if they're unavailable
+		// (offline, or this account can't see them), info still renders
+		// with whatever we have, falling back to cache and finally to nil.
+		absence, err := client.FetchAbsence()
 		if err != nil {
-			log.Fatalf("Failed to resolve user: %v", err)
+			absence, _ = client.LoadCachedAbsence()
 		}
 
-		client := bakalari.NewClient(profile.Host)
-		client.Token = profile.Token
-		client.Profile = profileName
-		client.CacheDir = cfg.General.CacheDir
-		if client.CacheDir == "" {
-			home, _ := os.UserHomeDir()
-			client.CacheDir = filepath.Join(home, ".cache", "bakalari-cli")
-		}
-
-		userInfo, err := client.FetchUserInfo()
+		marks, err := client.FetchMarks()
 		if err != nil {
-			err = client.Login(profile.User, profile.Pass)
-			if err != nil {
-				if cached, cacheErr := client.LoadCachedUserInfo(); cacheErr == nil {
-					log.Printf("Warning: using cached user info: %v", err)
-					absence, _ := client.LoadCachedAbsence()
-					marks, _ := client.LoadCachedMarks()
-					bakalari.RenderInfo(cached, absence, marks)
-					return
-				}
-				log.Fatalf("Login failed: %v", err)
-			}
-			profile.Token = client.Token
-			cfg.Profiles[profileName] = profile
-			if err := bakalari.SaveToken(configPath, profileName, client.Token); err != nil {
-				log.Printf("Warning: failed to save token: %v", err)
-			}
-
-			userInfo, err = client.FetchUserInfo()
-			if err != nil {
-				if cached, cacheErr := client.LoadCachedUserInfo(); cacheErr == nil {
-					log.Printf("Warning: using cached data: %v", err)
-					userInfo = cached
-				} else {
-					log.Fatalf("Failed to fetch user info: %v", err)
-				}
-			}
+			marks, _ = client.LoadCachedMarks()
 		}
 
-		absence, absenceErr := client.FetchAbsence()
-		if absenceErr != nil {
-			if cached, cacheErr := client.LoadCachedAbsence(); cacheErr == nil {
-				log.Printf("Warning: using cached absence data: %v", absenceErr)
-				absence = cached
-			} else {
-				absence = nil
-			}
-		}
-
-		marks, marksErr := client.FetchMarks()
-		if marksErr != nil {
-			if cached, cacheErr := client.LoadCachedMarks(); cacheErr == nil {
-				log.Printf("Warning: using cached grade data: %v", marksErr)
-				marks = cached
-			} else {
-				marks = nil
-			}
-		}
-
-		bakalari.RenderInfo(userInfo, absence, marks)
+		bakalari.RenderInfo(result.Data, absence, marks)
 	},
 }
 

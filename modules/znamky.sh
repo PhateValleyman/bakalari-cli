@@ -97,3 +97,15 @@ printf '%s' "$DATA" | jq -r '
         + "  váha: " + ((.Weight // "-") | tostring)
         + (if .IsNew == true then "  *NOVÁ*" else "" end))
 '
+
+NEW_MARKS="$(printf '%s' "$DATA" | jq -r '
+    .Subjects[]? as $s
+    | $s.Marks[]? | select(.IsNew == true)
+    | "[" + ($s.Subject.Abbrev // $s.Subject.Name // "?") + "] " + (.Caption // "") + ": " + (.MarkText // "-")
+')"
+
+if [[ -n "$NEW_MARKS" && "$NEW_MARKS" != "null" ]]; then
+    NEW_COUNT="$(printf '%s\n' "$NEW_MARKS" | wc -l)"
+    NEW_MESSAGE="$(printf '%s\n' "$NEW_MARKS" | head -n 3 | tr '\n' ' ')"
+    notify_android "bakalari_marks_alert" "Bakaláři: Nová známka ($NEW_COUNT)" "$NEW_MESSAGE"
+fi

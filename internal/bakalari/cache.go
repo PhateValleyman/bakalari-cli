@@ -2,10 +2,10 @@ package bakalari
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"os"
 	"path/filepath"
 	"sort"
-	"github.com/fatih/color"
 )
 
 // ListCache lists all files in the cache directory.

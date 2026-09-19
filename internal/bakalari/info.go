@@ -2,7 +2,6 @@ package bakalari
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 )
 
 // RenderInfo prints a summary of student information.
@@ -11,14 +10,18 @@ func RenderInfo(user *UserInfo, absence *AbsenceResponse, marks *MarksResponse) 
 		return fmt.Sprintf("\033[38;5;%dm", code)
 	}
 	reset := "\033[0m"
-	bold := color.New(color.Bold).SprintFunc()
-	
+
 	row := func(label, value string, colorCode int) {
 		labelColor := c256(colorCode)
 		fmt.Printf("%s%-25s%s %s\n", labelColor, label, reset, value)
 	}
 
-	fmt.Printf("%s%s=== Informace o uživateli ===%s\n", bold(""), c256(39), reset)
+	// header prints a bold, colored section title (e.g. "=== Absence ===").
+	header := func(title string, colorCode int) {
+		fmt.Printf("\033[1;38;5;%dm%s%s\n", colorCode, title, reset)
+	}
+
+	header("=== Informace o uživateli ===", 39)
 	row("Jméno:", user.FullName, 45)
 	row("Třída:", user.Class.Name, 45)
 	row("Třídní učitel:", user.Class.Teacher.Name, 45)
@@ -29,15 +32,17 @@ func RenderInfo(user *UserInfo, absence *AbsenceResponse, marks *MarksResponse) 
 			totalM += a.Missed
 			totalU += a.Unsolved
 		}
-		
-		fmt.Printf("\n%s%s=== Docházka ===%s\n", bold(""), c256(39), reset)
+
+		fmt.Println()
+		header("=== Docházka ===", 39)
 		row("Zameškané hodiny:", fmt.Sprintf("%d", totalM+totalU), 208)
 		row("Omluvené hodiny:", fmt.Sprintf("%d", totalM), 40)
 		row("Neomluvené / nevyřešené:", fmt.Sprintf("%d", totalU), 196)
 	}
 
 	if marks != nil {
-		fmt.Printf("\n%s%s=== Průměry podle předmětů ===%s\n", bold(""), c256(39), reset)
+		fmt.Println()
+		header("=== Průměry podle předmětů ===", 39)
 		for _, s := range marks.Subjects {
 			if s.AverageText != "" {
 				fmt.Printf("%s%-25s%s %s\n", c256(226), s.Subject.Abbrev, reset, s.AverageText)

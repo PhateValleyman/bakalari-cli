@@ -9,7 +9,7 @@ import (
 func TestLoadConfigDefaultsAndColors(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")
-	config := "[general]\nuser01 = \"student\"\n\n[student]\nhost = \"school.example\"\nuser = \"alice\"\npass = \"secret\"\nmax_hours = 0\n\n[colors]\nM = 226\n"Čj" = 34\n"
+	config := "[general]\nuser01 = \"student\"\n\n[student]\nhost = \"school.example\"\nuser = \"alice\"\npass = \"secret\"\nmax_hours = 0\n\n[colors]\nM = 226\n\"Čj\" = 34\n"
 	if err := os.WriteFile(path, []byte(config), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,6 @@ func TestLoadConfigDefaultsAndColors(t *testing.T) {
 		t.Fatalf("MaxHours = %d, want 6", profile.MaxHours)
 	}
 }
-
 
 func TestLoadConfigAcceptsLegacyUnicodeColorKeys(t *testing.T) {
 	dir := t.TempDir()

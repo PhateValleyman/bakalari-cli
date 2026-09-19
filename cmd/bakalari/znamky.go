@@ -1,9 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/phatevalleyman/bakalari-cli/internal/bakalari"
 	"github.com/spf13/cobra"
@@ -13,62 +12,46 @@ var znamkyCmd = &cobra.Command{
 	Use:   "znamky",
 	Short: "Show marks",
 	Run: func(cmd *cobra.Command, args []string) {
-		configPath := configFile
-		if configPath == "" {
-			configPath = os.Getenv("BAKALARI_CONFIG")
-		}
+		client, cfg, configPath, profileName, profile := setupClient()
 
-		cfg, err := bakalari.LoadConfig(configPath)
+		result, err := bakalari.FetchWithLoginFallback(client, profile.User, profile.Pass,
+			client.FetchMarks, client.LoadCachedMarks)
 		if err != nil {
-			log.Fatalf("Failed to load config: %v", err)
+			log.Fatalf("Failed to fetch marks: %v", err)
 		}
-
-		profileName, profile, err := cfg.ResolveUser(userProfile)
-		if err != nil {
-			log.Fatalf("Failed to resolve user: %v", err)
+		if result.FromCache {
+			log.Println("Warning: using cached marks")
 		}
+		persistTokenIfLoggedIn(result.LoggedIn, client, cfg, configPath, profileName, &profile)
 
-		client := bakalari.NewClient(profile.Host)
-		client.Token = profile.Token
-		client.Profile = profileName
-		client.CacheDir = cfg.General.CacheDir
-		if client.CacheDir == "" {
-			home, _ := os.UserHomeDir()
-			client.CacheDir = filepath.Join(home, ".cache", "bakalari-cli")
-		}
-
-		marks, err := client.FetchMarks()
-		if err != nil {
-			err = client.Login(profile.User, profile.Pass)
-			if err != nil {
-				if cached, cacheErr := client.LoadCachedMarks(); cacheErr == nil {
-					log.Printf("Warning: using cached marks: %v", err)
-					bakalari.RenderMarks(cached)
-					return
-				}
-				log.Fatalf("Login failed: %v", err)
-			}
-			profile.Token = client.Token
-			cfg.Profiles[profileName] = profile
-			if err := bakalari.SaveToken(configPath, profileName, client.Token); err != nil {
-				log.Printf("Warning: failed to save token: %v", err)
-			}
-
-			marks, err = client.FetchMarks()
-			if err != nil {
-				if cached, cacheErr := client.LoadCachedMarks(); cacheErr == nil {
-					log.Printf("Warning: using cached data: %v", err)
-					marks = cached
-				} else {
-					log.Fatalf("Failed to fetch marks: %v", err)
-				}
-			}
-		}
-
-		bakalari.RenderMarks(marks)
+		bakalari.RenderMarks(result.Data)
+		notifyNewMarks(result.Data)
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(znamkyCmd)
+// notifyNewMarks sends an Android notification when the API reports newly
+// added grades (IsNew), mirroring the existing unfinished-homework alert.
+func notifyNewMarks(marks *bakalari.MarksResponse) {
+	var newest []string
+	for _, s := range marks.Subjects {
+		for _, m := range s.Marks {
+			if !m.IsNew {
+				continue
+			}
+			text := m.MarkText
+			if text == "" {
+				text = "-"
+			}
+			newest = append(newest, fmt.Sprintf("[%s] %s: %s", s.Subject.Abbrev, m.Caption, text))
+		}
+	}
+
+	if len(newest) == 0 {
+		return
+	}
+	msg := newest[0]
+	if len(newest) > 1 {
+		msg = fmt.Sprintf("%s a %d další", msg, len(newest)-1)
+	}
+	_ = bakalari.NotifyAndroid("bakalari_marks_alert", fmt.Sprintf("Bakaláři: Nová známka (%d)", len(newest)), msg)
 }

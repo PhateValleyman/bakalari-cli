@@ -2,8 +2,9 @@ package bakalari
 
 import (
 	"fmt"
-	"strings"
 	"github.com/fatih/color"
+	"strings"
+	"unicode/utf8"
 )
 
 // RenderTimetable prints a formatted timetable to the console.
@@ -19,12 +20,16 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 		colors[k] = v
 	}
 
-	// Helper for centering text
+	// Helper for centering text. Uses rune counts, not byte length, so Czech
+	// diacritics (Čj, Pč, Út, Čt, Pá, ...) don't throw off column alignment
+	// or get sliced in the middle of a multi-byte UTF-8 character.
 	center := func(s string, w int) string {
-		if len(s) >= w {
-			return s[:w]
+		n := utf8.RuneCountInString(s)
+		if n >= w {
+			runes := []rune(s)
+			return string(runes[:w])
 		}
-		total := w - len(s)
+		total := w - n
 		left := total / 2
 		right := total - left
 		return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
@@ -65,11 +70,11 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 			tid := strings.ReplaceAll(a.TeacherID, " ", "")
 			subj := subjects[sid]
 			teach := teachers[tid]
-			if len(subj) > maxW {
-				maxW = len(subj)
+			if n := utf8.RuneCountInString(subj); n > maxW {
+				maxW = n
 			}
-			if len(teach) > maxW {
-				maxW = len(teach)
+			if n := utf8.RuneCountInString(teach); n > maxW {
+				maxW = n
 			}
 		}
 	}
@@ -123,7 +128,7 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 		if i > 0 {
 			fmt.Println(sepBorder)
 		}
-		
+
 		dn := dayNames[d.DayOfWeek]
 		if dn == "" {
 			dn = fmt.Sprintf("%d", d.DayOfWeek)
@@ -150,7 +155,7 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 				tid := strings.ReplaceAll(atom.TeacherID, " ", "")
 				subj := subjects[sid]
 				teach := teachers[tid]
-				
+
 				c := colors.GetColor(subj)
 				l1 += ColorizeSubject(subj, center(subj, cellW), c) + "│"
 				l2 += ColorizeSubject(subj, center(teach, cellW), c) + "│"
