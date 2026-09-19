@@ -1,10 +1,12 @@
 package bakalari
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/BurntSushi/toml"
 )
@@ -37,8 +39,18 @@ func LoadConfig(path string) (*Config, error) {
 		path = filepath.Join(home, ".config", "bakalari-cli", "config.toml")
 	}
 
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read config: %w", err)
+	}
+
+	// TOML bare keys are ASCII-only. Older config files may contain Unicode
+	// subject keys such as Čj = 34; normalize those keys in memory before
+	// decoding so existing configs remain readable without being rewritten.
+	data = normalizeUnicodeColorKeys(data)
+
 	var raw map[string]interface{}
-	if _, err := toml.DecodeFile(path, &raw); err != nil {
+	if _, err := toml.Decode(string(data), &raw); err != nil {
 		return nil, err
 	}
 
@@ -103,6 +115,75 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	return config, nil
+}
+
+// normalizeUnicodeColorKeys quotes non-ASCII bare keys in [colors].
+// TOML permits Unicode in quoted keys, but not in bare keys.
+func normalizeUnicodeColorKeys(data []byte) []byte {
+	var out strings.Builder
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	inColors := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+
+		if strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]") {
+			inColors = trimmed == "[colors]"
+			out.WriteString(line)
+			out.WriteByte('\n')
+			continue
+		}
+
+		if inColors {
+			line = quoteUnicodeColorKey(line)
+		}
+		out.WriteString(line)
+		out.WriteByte('\n')
+	}
+
+	if scanner.Err() != nil {
+		return data
+	}
+	result := out.String()
+	if len(data) > 0 && data[len(data)-1] != '\n' {
+		result = strings.TrimSuffix(result, "\n")
+	}
+	return []byte(result)
+}
+
+func quoteUnicodeColorKey(line string) string {
+	indentLen := len(line) - len(strings.TrimLeft(line, " \t"))
+	indent := line[:indentLen]
+	rest := line[indentLen:]
+	eq := strings.IndexByte(rest, '=')
+	if eq < 0 {
+		return line
+	}
+
+	rawKey := strings.TrimSpace(rest[:eq])
+	if rawKey == "" || strings.HasPrefix(rawKey, "#") || strings.HasPrefix(rawKey, "\"") || strings.HasPrefix(rawKey, "`") {
+		return line
+	}
+	if !containsNonASCII(rawKey) {
+		return line
+	}
+
+	quoted := strings.ReplaceAll(strings.ReplaceAll(rawKey, `\`, `\\`), `"`, `\"`)
+	return indent + `"` + quoted + `"` + rest[eq:]
+}
+
+func containsNonASCII(s string) bool {
+	for len(s) > 0 {
+		r, size := utf8.DecodeRuneInString(s)
+		if r == utf8.RuneError && size == 1 {
+			return true
+		}
+		if r > 127 {
+			return true
+		}
+		s = s[size:]
+	}
+	return false
 }
 
 // ResolveUser returns the profile name and the profile itself for the requested user.
