@@ -41,11 +41,11 @@ class = "your_class"
 # Optional ANSI 256-color palette for timetable subjects.
 # If a subject is missing here, rozvrh.sh uses its built-in default color.
 # Valid values are 0-255.
-Hv  = 135
-M   = 33
-Čj  = 34
-Prv = 172
-Vv  = 44
-Pč  = 160
-Tv  = 170
+"Hv"  = 135
+"M"   = 33
+"Čj"  = 34
+"Prv" = 172
+"Vv"  = 44
+"Pč"  = 160
+"Tv"  = 170
 
