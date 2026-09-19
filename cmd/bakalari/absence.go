@@ -41,6 +41,11 @@ var absenceCmd = &cobra.Command{
 		if err != nil {
 			err = client.Login(profile.User, profile.Pass)
 			if err != nil {
+				if cached, cacheErr := client.LoadCachedAbsence(); cacheErr == nil {
+					log.Printf("Warning: using cached absence: %v", err)
+					bakalari.RenderAbsence(cached)
+					return
+				}
 				log.Fatalf("Login failed: %v", err)
 			}
 			profile.Token = client.Token
