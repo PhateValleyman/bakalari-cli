@@ -220,7 +220,7 @@ func SaveToken(path, profileName, token string) error {
 }
 
 func escapeTOMLString(value string) string {
-	value = strings.ReplaceAll(value, "\\\\", "\\\\\\\\")
-	value = strings.ReplaceAll(value, "\"", "\\\\"")
+	value = strings.ReplaceAll(value, `\\`, `\\\\`)
+	value = strings.ReplaceAll(value, `"`, `\\"`)
 	return value
 }
