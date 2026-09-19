@@ -9,6 +9,7 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 - [x] Go příkazy při nedostupné síti končily chybou po neúspěšném loginu místo použití offline cache – všechny datové příkazy nyní po selhání obnovy tokenu zkusí cache.
 - [x] Opravena TOML escapace tokenu v Go klientovi (zpětná lomítka a uvozovky).
 - [x] Přidán `make test` a Go test job do GitLab CI (`go test -mod=vendor ./...`).
+- [x] Go renderer používá kontrastní černý/bílý text podle jasu ANSI 256 pozadí; přidán regresní test převodu barev.
 
 - [x] `ukoly.sh` mělo natvrdo v kódu uživatelské jméno a heslo k Bakalářům –
       přesunuto do `config.toml`, sdíleno s `rozvrh.sh`.
