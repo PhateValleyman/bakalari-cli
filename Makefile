@@ -1,12 +1,15 @@
 BINARY_NAME=bakalari
 CMD_PATH=./cmd/bakalari
 
-.PHONY: all build clean cross-compile
+.PHONY: all build test clean cross-compile
 
 all: build
 
 build:
 	go build -trimpath -x -o $(BINARY_NAME) $(CMD_PATH)
+
+test:
+	go test -mod=vendor ./...
 
 clean:
 	rm -f $(BINARY_NAME)
