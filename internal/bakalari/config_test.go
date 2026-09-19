@@ -34,6 +34,24 @@ func TestLoadConfigDefaultsAndColors(t *testing.T) {
 	}
 }
 
+
+func TestLoadConfigAcceptsLegacyUnicodeColorKeys(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	config := "[general]\nuser01 = \"student\"\n\n[student]\nhost = \"school.example\"\nuser = \"alice\"\n\n[colors]\nČj = 34\nPč = 160\nM = 33\n"
+	if err := os.WriteFile(path, []byte(config), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v", err)
+	}
+	if cfg.Colors["Čj"] != 34 || cfg.Colors["Pč"] != 160 || cfg.Colors["M"] != 33 {
+		t.Fatalf("colors = %#v, want Unicode and ASCII keys preserved", cfg.Colors)
+	}
+}
+
 func TestSaveTokenPreservesOtherConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")
