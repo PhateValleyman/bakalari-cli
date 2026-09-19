@@ -41,6 +41,11 @@ var znamkyCmd = &cobra.Command{
 		if err != nil {
 			err = client.Login(profile.User, profile.Pass)
 			if err != nil {
+				if cached, cacheErr := client.LoadCachedMarks(); cacheErr == nil {
+					log.Printf("Warning: using cached marks: %v", err)
+					bakalari.RenderMarks(cached)
+					return
+				}
 				log.Fatalf("Login failed: %v", err)
 			}
 			profile.Token = client.Token
