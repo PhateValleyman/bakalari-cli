@@ -147,6 +147,15 @@ func (c *Client) FetchUserInfo() (*UserInfo, error) {
 	return &result, err
 }
 
+// LoadCachedTimetable loads the last successfully fetched timetable.
+func (c *Client) LoadCachedTimetable() (*TimetableResponse, error) {
+	var result TimetableResponse
+	if err := c.loadCache("timetable", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // LoadCachedHomeworks loads the last successfully fetched homeworks.
 func (c *Client) LoadCachedHomeworks() (*HomeworksResponse, error) {
 	var result HomeworksResponse
