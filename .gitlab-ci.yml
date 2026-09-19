@@ -25,3 +25,13 @@ smoke:
   stage: test
   script:
     - bash tests/smoke.sh
+
+
+go-test:
+  stage: test
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends golang-go
+    - rm -rf /var/lib/apt/lists/*
+  script:
+    - go test -mod=vendor ./...
