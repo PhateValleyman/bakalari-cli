@@ -4,14 +4,20 @@ import (
 	"fmt"
 )
 
-// RenderInfo prints a summary of student information.
-func RenderInfo(user *UserInfo, absence *AbsenceResponse, marks *MarksResponse) {
+// RenderInfo prints a summary of student information. timetable is optional
+// (pass nil if unavailable) and is only used as a last-resort fallback to
+// guess the class teacher when the user-info API doesn't expose one
+// directly — see UserInfo.ResolveClassTeacher.
+func RenderInfo(user *UserInfo, absence *AbsenceResponse, marks *MarksResponse, timetable *TimetableResponse) {
 	c256 := func(code int) string {
 		return fmt.Sprintf("\033[38;5;%dm", code)
 	}
 	reset := "\033[0m"
 
 	row := func(label, value string, colorCode int) {
+		if value == "" {
+			value = "-"
+		}
 		labelColor := c256(colorCode)
 		fmt.Printf("%s%-25s%s %s\n", labelColor, label, reset, value)
 	}
@@ -23,8 +29,8 @@ func RenderInfo(user *UserInfo, absence *AbsenceResponse, marks *MarksResponse) 
 
 	header("=== Informace o uživateli ===", 39)
 	row("Jméno:", user.FullName, 45)
-	row("Třída:", user.Class.Name, 45)
-	row("Třídní učitel:", user.Class.Teacher.Name, 45)
+	row("Třída:", user.ResolveClassName(), 45)
+	row("Třídní učitel:", user.ResolveClassTeacher(MostCommonTeacherName(timetable)), 45)
 
 	if absence != nil {
 		var totalM, totalU int

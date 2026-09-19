@@ -5,6 +5,36 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 
 ## Právě opraveno
 
+- [x] Reálné hlášené chyby z provozu na Redmi (`bakalari info` a
+      `bakalari absence`):
+  - `absence.go`: `time.Parse` používal jediný pevný formát
+    (`2006-01-02T15:04:05`), který na tvé škole neseděl → všechna data se
+    tiše propadla na nulovou hodnotu `time.Time`, což se vykreslilo jako
+    `01.01.0001` / `Po` u každého řádku. Přidán `dateutil.go` s
+    `parseAPIDate()`, který zkouší několik běžných variant (s/bez
+    časové zóny, s/bez desetinných sekund) a při neúspěchu vypíše
+    aspoň syrovou hodnotu a `?` místo tichého klamání nulovým datem.
+  - `info.go`: `Třída`/`Třídní učitel` byly prázdné, protože skutečná
+    odpověď `/api/3/user` je na tvé škole mnohem bohatší (bash cache
+    4350 B vs. Go parsovalo jen 112 B z ní) a pole nejsou tam, kde je Go
+    struct čekal. `UserInfo` teď zkouší stejný řetězec fallbacků jako
+    už dřív fungující `info.sh`: `Class.Name` → `Class.Abbrev` →
+    rozparsování `FullName` tvaru `"Příjmení Jméno, Třída"` (přesně tvůj
+    případ `"Müller Jonáš, 1.A"`); u učitele navíc `Class.Teacher` →
+    `Class.ClassTeacher` → kořenové `ClassTeacher` (objekt i čistý
+    string) → a jako poslední záchrana nejčastěji se opakující učitel
+    v rozvrhu (`MostCommonTeacherName`), stejně jako to dělá bash.
+    Pokud po tomhle bude `Třídní učitel` pořád prázdný, pošli mi prosím
+    obsah `~/.cache/bakalari-cli/info-*-user.json` (bash cache, 4350 B) –
+    uvidím přesný tvar odpovědi tvé školy a dopíšu poslední fallback.
+  - `client.go`: cache soubory Go binárky měly v názvu i schéma
+    (`absence-Dzonny-https:__zssumava.bakalari.cz.json`), protože se
+    sanitizovalo jen lomítko, ne dvojtečka. Teď se ukládá čistě jako
+    `absence-Dzonny-zssumava.bakalari.cz.json` (odpovídá konvenci bash
+    nástrojů, i když jde stále o oddělenou cache – sdílení cache mezi
+    Go a bash verzí jsem záměrně needěl bez domluvy, protože `info.sh`
+    má vlastní `info-*` namespace z důvodu jiných nároků na čerstvost).
+
 - [x] `config_test.go` měl neescapovanou uvozovku kolem `"Čj"` v řetězcovém
       literálu → `go build`/`go vet`/`go test` na celém modulu vůbec neprošly.
       Opraveno, `gofmt -l` je teď na `internal/` a `cmd/` čisté (předtím

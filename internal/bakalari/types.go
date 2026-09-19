@@ -1,5 +1,7 @@
 package bakalari
 
+import "encoding/json"
+
 // Subject represents a school subject.
 type Subject struct {
 	ID     string `json:"Id"`
@@ -97,14 +99,36 @@ type AbsenceResponse struct {
 	Absences []AbsenceDay `json:"Absences"`
 }
 
-// UserInfo represents the student profile.
+// UserInfo represents the student profile. Different Bakaláři deployments
+// expose slightly different JSON shapes for the class name and class
+// teacher — some put the teacher under Class.Teacher, others under
+// Class.ClassTeacher, and some put it at the root as ClassTeacher (either
+// as an object or, on some schools, as a plain string). We capture all of
+// the shapes we know about and pick whichever is populated; see
+// ResolveClassName / ResolveClassTeacher in userinfo.go.
 type UserInfo struct {
 	UserUID  string `json:"UserUID"`
 	FullName string `json:"FullName"`
 	Class    struct {
-		Name    string `json:"Name"`
-		Teacher struct {
-			Name string `json:"Name"`
-		} `json:"Teacher"`
+		Name         string      `json:"Name"`
+		Abbrev       string      `json:"Abbrev"`
+		Teacher      NamedPerson `json:"Teacher"`
+		ClassTeacher NamedPerson `json:"ClassTeacher"`
 	} `json:"Class"`
+	ClassTeacherRaw json.RawMessage `json:"ClassTeacher"`
+}
+
+// NamedPerson covers the two field names different school deployments use
+// for a person's display name.
+type NamedPerson struct {
+	Name     string `json:"Name"`
+	FullName string `json:"FullName"`
+}
+
+// DisplayName returns whichever of Name/FullName is populated.
+func (p NamedPerson) DisplayName() string {
+	if p.Name != "" {
+		return p.Name
+	}
+	return p.FullName
 }

@@ -36,7 +36,15 @@ var infoCmd = &cobra.Command{
 			marks, _ = client.LoadCachedMarks()
 		}
 
-		bakalari.RenderInfo(result.Data, absence, marks)
+		// Timetable is only used as a fallback to guess the class teacher
+		// when the user-info API doesn't expose one directly (see
+		// bakalari.MostCommonTeacherName), so it's best-effort too.
+		timetable, err := client.FetchTimetable()
+		if err != nil {
+			timetable, _ = client.LoadCachedTimetable()
+		}
+
+		bakalari.RenderInfo(result.Data, absence, marks, timetable)
 	},
 }
 

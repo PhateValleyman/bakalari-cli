@@ -37,11 +37,24 @@ func NewClient(schoolHost string) *Client {
 	}
 }
 
+// cacheHost returns a filesystem-safe, scheme-less representation of the
+// API host, e.g. "https://zssumava.bakalari.cz" -> "zssumava.bakalari.cz".
+// This matches the naming used by the legacy bash tools (lib/common.sh),
+// so both implementations share the same cache files on disk instead of
+// each keeping their own copy under an ugly "https:__host" filename.
+func (c *Client) cacheHost() string {
+	host := c.BaseURL
+	host = strings.TrimPrefix(host, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	replacer := strings.NewReplacer("/", "_", ":", "_", "\\", "_")
+	return replacer.Replace(host)
+}
+
 func (c *Client) cacheFile(name string) string {
 	if c.CacheDir == "" {
 		return ""
 	}
-	safeName := fmt.Sprintf("%s-%s-%s.json", name, c.Profile, strings.ReplaceAll(c.BaseURL, "/", "_"))
+	safeName := fmt.Sprintf("%s-%s-%s.json", name, c.Profile, c.cacheHost())
 	return filepath.Join(c.CacheDir, safeName)
 }
 

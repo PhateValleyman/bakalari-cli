@@ -28,7 +28,7 @@ func RenderAbsence(data *AbsenceResponse) {
 	var totalH, totalM, totalL, totalS, totalU int
 
 	for _, a := range data.Absences {
-		date, _ := time.Parse("2006-01-02T15:04:05", a.Date)
+		date, ok := parseAPIDate(a.Date)
 		hours := a.Ok + a.Missed + a.Late + a.Soon
 
 		rowColor := color.New(color.FgHiBlack)
@@ -36,9 +36,16 @@ func RenderAbsence(data *AbsenceResponse) {
 			rowColor = color.New(color.FgWhite)
 		}
 
+		dateText := a.Date // Fall back to the raw value if we couldn't parse it.
+		dayText := "?"
+		if ok {
+			dateText = date.Format("02.01.2006")
+			dayText = dayNames[date.Weekday()]
+		}
+
 		fmt.Printf("%-12s  %2s  %7d  %9d  %7d  %7d  %12d\n",
-			rowColor.Sprint(date.Format("02.01.2006")),
-			rowColor.Sprint(dayNames[date.Weekday()]),
+			rowColor.Sprint(dateText),
+			rowColor.Sprint(dayText),
 			hours, a.Missed, a.Late, a.Soon, a.Unsolved)
 
 		totalH += hours
