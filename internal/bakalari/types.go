@@ -1,7 +1,5 @@
 package bakalari
 
-import "time"
-
 // Subject represents a school subject.
 type Subject struct {
 	ID     string `json:"Id"`
