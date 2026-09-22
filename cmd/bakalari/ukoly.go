@@ -53,3 +53,7 @@ func notifyUnfinishedHomeworks(homeworks *bakalari.HomeworksResponse) {
 	}
 	_ = bakalari.NotifyAndroid("bakalari_hw_alert", fmt.Sprintf("Bakaláři: Nesplněný úkol (%d)", len(unfinished)), msg)
 }
+
+func init() {
+	rootCmd.AddCommand(ukolyCmd)
+}

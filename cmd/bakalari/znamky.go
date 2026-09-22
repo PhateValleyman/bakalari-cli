@@ -55,3 +55,7 @@ func notifyNewMarks(marks *bakalari.MarksResponse) {
 	}
 	_ = bakalari.NotifyAndroid("bakalari_marks_alert", fmt.Sprintf("Bakaláři: Nová známka (%d)", len(newest)), msg)
 }
+
+func init() {
+	rootCmd.AddCommand(znamkyCmd)
+}

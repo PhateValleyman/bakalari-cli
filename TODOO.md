@@ -5,6 +5,18 @@ Poznámky, plánované opravy a příprava na přepis do Golangu.
 
 ## Právě opraveno
 
+- [x] **Regrese, kterou jsem sám způsobil v předchozím kole refaktoringu:**
+      při přepisu `ukoly.go`/`znamky.go` na sdílený `FetchWithLoginFallback`
+      jsem omylem vynechal `func init() { rootCmd.AddCommand(...) }` →
+      oba příkazy se přestaly registrovat a zmizely z `bakalari --help`
+      i ze samotného CLI, aniž by to `go build` nějak nahlásil (chybějící
+      registrace není chyba kompilace, jen tichá ztráta funkčnosti).
+      Opraveno + přidán `cmd/bakalari/main_test.go`
+      (`TestAllExpectedCommandsAreRegistered`), který ověří, že všech 6
+      příkazů je skutečně navěšeno na `rootCmd` – ověřeno, že bez opravy
+      test spolehlivě spadne, takže tahle třída regrese se příště chytí
+      v `go test`, ne až na tvém telefonu.
+
 - [x] Reálné hlášené chyby z provozu na Redmi (`bakalari info` a
       `bakalari absence`):
   - `absence.go`: `time.Parse` používal jediný pevný formát
@@ -120,9 +132,11 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
       ne dva samostatné skripty.
 - [x] Barevný výstup v Go přes `fatih/color` nebo `lipgloss` – zachovat
       stejnou barevnou paletu předmětů jako dnes v `awk` části `rozvrh.sh`.
-- [ ] Cross-compile pro `arm64` (Redmi Note 11), `armv7` (Shield Tablet K1)
-      a `armv5` (ZyXEL NSA320/ffp) – ověřit běh na cílových zařízeních.
-      Android 5.1 je pouze historický kompatibilitní cíl; aktuální Shield běží na Androidu 8.1.
+- [x] Cross-compile pro `arm64` (Redmi Note 11) – **ověřeno na reálném
+      zařízení** (`bakalari info`/`rozvrh`/`cache` reálně odběhly přes
+      Termux). `armv7` (Shield Tablet K1) a `armv5`/GOARM=5 (ZyXEL NSA320,
+      ffp) se zatím cross-compilují bez chyby, ale běh na těch dvou
+      konkrétních zařízeních ještě nikdo nepotvrdil.
 - [/] Až bude Go verze na paritě s bash verzí (rozvrh + úkoly + notifikace),
       bash skripty přesunout do `legacy/` a `README.md` přepsat na Go verzi
       jako primární.
