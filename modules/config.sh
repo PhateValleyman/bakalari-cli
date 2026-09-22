@@ -462,13 +462,13 @@ for subject in Hv M Čj Prv Vv Pč Tv; do
         }
         insec {
             current_key=$1
-            gsub(/^\\"|\\"$/, "", current_key)
-            if (current_key == key) { print "\\"" key "\\" = " value; done=1; next }
+            gsub(/^"|"$/, "", current_key)
+            if (current_key == key) { print "\"" key "\" = " value; done=1; next }
         }
         { print }
         END {
-            if (insec && !done) print "\\"" key "\\" = " value
-            if (!found) { print ""; print "[colors]"; print "\\"" key "\\" = " value }
+            if (insec && !done) print "\"" key "\" = " value
+            if (!found) { print ""; print "[colors]"; print "\"" key "\" = " value }
         }
     ' "$BAKALARI_CONFIG" >"$tmp" || { rm -f "$tmp"; exit "$EXIT_CONFIG"; }
     chmod 600 "$tmp" 2>/dev/null || true
