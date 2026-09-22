@@ -84,14 +84,14 @@ grep -Fq 'user = "edited-user"' "$CONFIG"
 grep -Fq 'pass = "edited-pass"' "$CONFIG"
 grep -Fq 'name = "Edited Name"' "$CONFIG"
 grep -Fq 'class = "4.A"' "$CONFIG"
-grep -Fq 'M = 226' "$CONFIG"
+grep -Fq '"M" = 226' "$CONFIG"
 grep -Fq 'user02 = "edited-profile"' "$CONFIG"
 grep -Fq $'\033[48;5;226m' "$TMP_DIR/config.out"
 
 GLOBAL_INPUT=$'global\n1\n/tmp/custom-cache\n3\n227\nq\n'
 printf "%s" "$GLOBAL_INPUT" | "$ROOT_DIR/bakalari-cli" config >"$TMP_DIR/config-global.out"
 grep -Fq 'cache_dir = "/tmp/custom-cache"' "$CONFIG"
-grep -Fq 'M = 227' "$CONFIG"
+grep -Fq '"M" = 227' "$CONFIG"
 
 LOGIN_INPUT=$'login-test-school\ntest-user\ntest-pass\n2\n'
 printf "%s" "$LOGIN_INPUT" | "$ROOT_DIR/bakalari-cli" login --user login-test >"$TMP_DIR/login.out"

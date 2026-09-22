@@ -206,6 +206,24 @@ GitLab CI spouští `shellcheck`, kontrolu syntaxe a stejné smoke testy.
 */30 7-16 * * 1-5  bash ~/bakalari-cli/bakalari-cli ukoly >> ~/bakalari-cli.log 2>&1
 ```
 
+### Termux:Widget
+
+Pro spuštění rozvrhu z plochy Androidu zkopíruj launcher do adresáře
+`~/.shortcuts/` aplikace Termux:Widget:
+
+```bash
+# Create the Termux:Widget shortcut directory.
+mkdir -p ~/.shortcuts
+
+# Install the timetable launcher and make it executable.
+cp contrib/termux-widget/rozvrh.sh ~/.shortcuts/bakalari-rozvrh
+chmod 700 ~/.shortcuts/bakalari-rozvrh
+```
+
+Launcher očekává repozitář v `~/bakalari-cli`. Pokud jej máš jinde, nastav
+`BAKALARI_CLI_DIR` přímo v launcheru nebo před jeho spuštěním. Volitelně použije
+`termux-toast` pro stručnou chybu, pokud repozitář nebo CLI nejsou nalezené.
+
 ## Struktura projektu
 
 ```

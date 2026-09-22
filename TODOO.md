@@ -145,7 +145,7 @@ Cílem je, aby přechod na Go nebyl "přepsat vše najednou", ale postupný:
 
 ## Nápady (bez závazku)
 
-- [ ] Widget/shortcut pro Termux:Widget spouštějící `rozvrh.sh`.
+- [x] Widget/shortcut pro Termux:Widget spouštějící `bakalari-cli rozvrh`.
 - [ ] Export rozvrhu do `.ics` (kalendář).
 - [x] Souhrnná notifikace i pro nové známky, ne jen úkoly. (hotovo v Go i
       bash verzi – `znamky`/`znamky.sh` teď posílají notifikaci stejně jako
