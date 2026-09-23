@@ -2,133 +2,90 @@ package bakalari
 
 import "encoding/json"
 
-// Subject represents a school subject.
 type Subject struct {
-	ID     string `json:"Id"`
+	ID string `json:"Id"`
 	Abbrev string `json:"Abbrev"`
-	Name   string `json:"Name"`
-}
-
-// Teacher represents a school teacher.
-type Teacher struct {
-	ID   string `json:"Id"`
 	Name string `json:"Name"`
 }
 
-// Hour represents a time slot in the timetable.
-type Hour struct {
-	ID        int    `json:"Id"`
-	Caption   string `json:"Caption"`
-	BeginTime string `json:"BeginTime"`
-	EndTime   string `json:"EndTime"`
+type Teacher struct {
+	ID string `json:"Id"`
+	Abbrev string `json:"Abbrev"`
+	Name string `json:"Name"`
 }
 
-// Atom represents a single lesson in a timetable day.
+type Hour struct {
+	ID int `json:"Id"`
+	Caption string `json:"Caption"`
+	BeginTime string `json:"BeginTime"`
+	EndTime string `json:"EndTime"`
+}
+
+type TimetableChange struct {
+	ChangeSubject interface{} `json:"ChangeSubject"`
+	Day string `json:"Day"`
+	Hours string `json:"Hours"`
+	ChangeType string `json:"ChangeType"`
+	Description string `json:"Description"`
+	Time string `json:"Time"`
+	TypeAbbrev *string `json:"TypeAbbrev"`
+	TypeName *string `json:"TypeName"`
+}
+
 type Atom struct {
-	HourID    int    `json:"HourId"`
+	HourID int `json:"HourId"`
+	GroupIDs []string `json:"GroupIds"`
 	SubjectID string `json:"SubjectId"`
 	TeacherID string `json:"TeacherId"`
-	Room      string `json:"Room"`
-	Theme     string `json:"Theme"`
+	RoomID string `json:"RoomId"`
+	CycleIDs []string `json:"CycleIds"`
+	Change *TimetableChange `json:"Change"`
+	HomeworkIDs []string `json:"HomeworkIds"`
+	Theme string `json:"Theme"`
 }
 
-// Day represents a day in the timetable.
 type Day struct {
-	DayOfWeek int    `json:"DayOfWeek"`
-	Date      string `json:"Date"`
-	Atoms     []Atom `json:"Atoms"`
+	DayOfWeek int `json:"DayOfWeek"`
+	Date string `json:"Date"`
+	DayDescription string `json:"DayDescription"`
+	DayType string `json:"DayType"`
+	Atoms []Atom `json:"Atoms"`
 }
 
-// TimetableResponse is the root object for the timetable API.
+type Class struct { ID string `json:"Id"`; Abbrev string `json:"Abbrev"`; Name string `json:"Name"` }
+type Group struct { ClassID string `json:"ClassId"`; ID string `json:"Id"`; Abbrev string `json:"Abbrev"`; Name string `json:"Name"` }
+type Room struct { ID string `json:"Id"`; Abbrev string `json:"Abbrev"`; Name string `json:"Name"` }
+type Cycle struct { ID string `json:"Id"`; Abbrev string `json:"Abbrev"`; Name string `json:"Name"` }
+
 type TimetableResponse struct {
-	Days     []Day     `json:"Days"`
-	Hours    []Hour    `json:"Hours"`
+	Days []Day `json:"Days"`
+	Hours []Hour `json:"Hours"`
 	Subjects []Subject `json:"Subjects"`
 	Teachers []Teacher `json:"Teachers"`
+	Classes []Class `json:"Classes"`
+	Groups []Group `json:"Groups"`
+	Rooms []Room `json:"Rooms"`
+	Cycles []Cycle `json:"Cycles"`
 }
 
-// Homework represents a homework assignment.
 type Homework struct {
-	ID      string `json:"ID"`
+	ID string `json:"ID"`
 	Content string `json:"Content"`
 	DateEnd string `json:"DateEnd"`
-	Subject struct {
-		Abbrev string `json:"Abbrev"`
-	} `json:"Subject"`
+	Subject struct { Abbrev string `json:"Abbrev"` } `json:"Subject"`
 	IsDone bool `json:"IsDone"`
 }
-
-// HomeworksResponse is the root object for the homeworks API.
-type HomeworksResponse struct {
-	Homeworks []Homework `json:"Homeworks"`
-}
-
-// Mark represents a single grade.
-type Mark struct {
-	MarkText string `json:"MarkText"`
-	Caption  string `json:"Caption"`
-	Date     string `json:"MarkDate"`
-	Weight   int    `json:"Weight"`
-	IsNew    bool   `json:"IsNew"`
-}
-
-// SubjectMarks represents marks for a specific subject.
-type SubjectMarks struct {
-	Subject     Subject `json:"Subject"`
-	AverageText string  `json:"AverageText"`
-	Marks       []Mark  `json:"Marks"`
-}
-
-// MarksResponse is the root object for the marks API.
-type MarksResponse struct {
-	Subjects []SubjectMarks `json:"Subjects"`
-}
-
-// AbsenceDay represents a daily absence summary.
-type AbsenceDay struct {
-	Date     string `json:"Date"`
-	Ok       int    `json:"Ok"`
-	Missed   int    `json:"Missed"`
-	Late     int    `json:"Late"`
-	Soon     int    `json:"Soon"`
-	Unsolved int    `json:"Unsolved"`
-}
-
-// AbsenceResponse is the root object for the absence API.
-type AbsenceResponse struct {
-	Absences []AbsenceDay `json:"Absences"`
-}
-
-// UserInfo represents the student profile. Different Bakaláři deployments
-// expose slightly different JSON shapes for the class name and class
-// teacher — some put the teacher under Class.Teacher, others under
-// Class.ClassTeacher, and some put it at the root as ClassTeacher (either
-// as an object or, on some schools, as a plain string). We capture all of
-// the shapes we know about and pick whichever is populated; see
-// ResolveClassName / ResolveClassTeacher in userinfo.go.
+type HomeworksResponse struct { Homeworks []Homework `json:"Homeworks"` }
+type Mark struct { MarkText string `json:"MarkText"`; Caption string `json:"Caption"`; Date string `json:"MarkDate"`; Weight int `json:"Weight"`; IsNew bool `json:"IsNew"` }
+type SubjectMarks struct { Subject Subject `json:"Subject"`; AverageText string `json:"AverageText"`; Marks []Mark `json:"Marks"` }
+type MarksResponse struct { Subjects []SubjectMarks `json:"Subjects"` }
+type AbsenceDay struct { Date string `json:"Date"`; Ok int `json:"Ok"`; Missed int `json:"Missed"`; Late int `json:"Late"`; Soon int `json:"Soon"`; Unsolved int `json:"Unsolved"` }
+type AbsenceResponse struct { Absences []AbsenceDay `json:"Absences"` }
 type UserInfo struct {
-	UserUID  string `json:"UserUID"`
+	UserUID string `json:"UserUID"`
 	FullName string `json:"FullName"`
-	Class    struct {
-		Name         string      `json:"Name"`
-		Abbrev       string      `json:"Abbrev"`
-		Teacher      NamedPerson `json:"Teacher"`
-		ClassTeacher NamedPerson `json:"ClassTeacher"`
-	} `json:"Class"`
+	Class struct { Name string `json:"Name"`; Abbrev string `json:"Abbrev"`; Teacher NamedPerson `json:"Teacher"`; ClassTeacher NamedPerson `json:"ClassTeacher"` } `json:"Class"`
 	ClassTeacherRaw json.RawMessage `json:"ClassTeacher"`
 }
-
-// NamedPerson covers the two field names different school deployments use
-// for a person's display name.
-type NamedPerson struct {
-	Name     string `json:"Name"`
-	FullName string `json:"FullName"`
-}
-
-// DisplayName returns whichever of Name/FullName is populated.
-func (p NamedPerson) DisplayName() string {
-	if p.Name != "" {
-		return p.Name
-	}
-	return p.FullName
-}
+type NamedPerson struct { Name string `json:"Name"`; FullName string `json:"FullName"` }
+func (p NamedPerson) DisplayName() string { if p.Name != "" { return p.Name }; return p.FullName }
