@@ -2,9 +2,10 @@ package bakalari
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/fatih/color"
 )
 
 // RenderTimetable prints a formatted timetable to the console.
@@ -48,12 +49,17 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 	teachers := make(map[string]string)
 	for _, t := range data.Teachers {
 		id := strings.ReplaceAll(t.ID, " ", "")
-		parts := strings.Fields(t.Name)
-		if len(parts) > 0 {
-			teachers[id] = parts[len(parts)-1]
-		} else {
-			teachers[id] = "?"
+		name := t.Abbrev
+		if name == "" {
+			parts := strings.Fields(t.Name)
+			if len(parts) > 0 {
+				name = parts[len(parts)-1]
+			}
 		}
+		if name == "" {
+			name = "?"
+		}
+		teachers[id] = name
 	}
 
 	// Prepare hours info
@@ -70,6 +76,9 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 			tid := strings.ReplaceAll(a.TeacherID, " ", "")
 			subj := subjects[sid]
 			teach := teachers[tid]
+			if a.Change != nil && subj == "" {
+				subj = changeMarker(a.Change.ChangeType)
+			}
 			if n := utf8.RuneCountInString(subj); n > maxW {
 				maxW = n
 			}
@@ -122,7 +131,7 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 	fmt.Println(sepBorder)
 
 	// Days
-	dayNames := map[int]string{1: "Po", 2: "Út", 3: "St", 4: "Čt", 5: "Pá"}
+	dayNames := map[int]string{1: "Po", 2: "Út", 3: "St", 4: "Čt", 5: "Pá", 6: "So", 7: "Ne"}
 
 	for i, d := range data.Days {
 		if i > 0 {
@@ -135,7 +144,7 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 		}
 
 		l1 := "│" + hi(center(dn, dayW)) + "│"
-		l2 := "│" + hi(center("", dayW)) + "│"
+		l2 := "│" + hi(center(dayTypeLabel(d), dayW)) + "│"
 
 		for _, h := range activeHours {
 			var atom *Atom
@@ -156,6 +165,17 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 				subj := subjects[sid]
 				teach := teachers[tid]
 
+				if subj == "" {
+					if atom.Change != nil {
+						subj = changeMarker(atom.Change.ChangeType)
+					} else if atom.SubjectID != "" {
+						subj = "?"
+					}
+				}
+				if teach == "" && atom.TeacherID != "" {
+					teach = "?"
+				}
+
 				c := colors.GetColor(subj)
 				l1 += ColorizeSubject(subj, center(subj, cellW), c) + "│"
 				l2 += ColorizeSubject(subj, center(teach, cellW), c) + "│"
@@ -165,4 +185,39 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 		fmt.Println(l2)
 	}
 	fmt.Println(botBorder)
+}
+
+
+func dayTypeLabel(d Day) string {
+	switch d.DayType {
+	case "", "WorkDay":
+		return ""
+	case "Weekend":
+		return "vík"
+	case "Celebration":
+		return "svát"
+	case "Holiday":
+		return "práz"
+	case "DirectorDay":
+		return "řel"
+	case "Undefined":
+		return "?"
+	default:
+		return "?"
+	}
+}
+
+func changeMarker(changeType string) string {
+	switch changeType {
+	case "Added":
+		return "+"
+	case "Removed", "Canceled":
+		return "×"
+	case "RoomChanged":
+		return "R"
+	case "Substitution":
+		return "S"
+	default:
+		return "!"
+	}
 }
