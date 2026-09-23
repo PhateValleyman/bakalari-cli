@@ -9,7 +9,7 @@ func TestChangeMarker(t *testing.T) {
 		"Canceled": "×",
 		"RoomChanged": "R",
 		"Substitution": "S",
-		"Unknown": "!",
+		"Unknown": "×",
 	}
 	for input, want := range cases {
 		if got := changeMarker(input); got != want {
@@ -26,7 +26,7 @@ func TestDayTypeLabel(t *testing.T) {
 		"Celebration": "svát",
 		"Holiday": "práz",
 		"DirectorDay": "řel",
-		"Undefined": "?",
+		"Undefined": "stav?",
 	}
 	for dayType, want := range cases {
 		if got := dayTypeLabel(Day{DayType: dayType}); got != want {
