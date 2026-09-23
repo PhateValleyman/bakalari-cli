@@ -90,7 +90,7 @@ func RenderTimetable(data *TimetableResponse, maxHours int, customColors map[str
 	cellW := maxW
 
 	// Headers and Borders
-	dayW := 4
+	dayW := 6
 	topBorder := "┌" + strings.Repeat("─", dayW) + "┬"
 	sepBorder := "├" + strings.Repeat("─", dayW) + "┼"
 	botBorder := "└" + strings.Repeat("─", dayW) + "┴"
@@ -193,17 +193,17 @@ func dayTypeLabel(d Day) string {
 	case "", "WorkDay":
 		return ""
 	case "Weekend":
-		return "vík"
+		return "víkend"
 	case "Celebration":
-		return "svát"
+		return "svátek"
 	case "Holiday":
-		return "práz"
+		return "prázdn"
 	case "DirectorDay":
-		return "řel"
+		return "volno"
 	case "Undefined":
-		return "?"
+		return "stav?"
 	default:
-		return "?"
+		return "stav?"
 	}
 }
 
@@ -218,6 +218,8 @@ func changeMarker(changeType string) string {
 	case "Substitution":
 		return "S"
 	default:
-		return "!"
+		// Never expose an unexplained "!" in the timetable. Unknown change
+		// types are still changes, so use a neutral change marker.
+		return "×"
 	}
 }
